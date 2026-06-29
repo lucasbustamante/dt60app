@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
@@ -16,6 +18,7 @@ class InsertCardScreen extends StatefulWidget {
 }
 
 class _InsertCardScreenState extends State<InsertCardScreen> {
+  final FocusNode _focusNode = FocusNode();
   StreamSubscription<CardReaderEvent>? _cardSubscription;
   Timer? _startDetectionTimer;
   bool _goingToPassword = false;
@@ -25,12 +28,18 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
     super.initState();
     unawaited(CardReaderService.instance.setStatusLed('blue'));
     _cardSubscription = CardReaderService.instance.events.listen((event) {
+      if (event.type == CardReaderEventType.pinpadCancel) {
+        unawaited(_cancelOperation());
+        return;
+      }
+
       if (event.type == CardReaderEventType.icInserted ||
           event.type == CardReaderEventType.magSwiped ||
           event.type == CardReaderEventType.nfcApproached) {
         _goToPassword();
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFocus());
     _startDetectionTimer = Timer(const Duration(milliseconds: 250), () {
       if (mounted) unawaited(CardReaderService.instance.startDetection());
     });
@@ -41,7 +50,15 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
     _startDetectionTimer?.cancel();
     unawaited(CardReaderService.instance.stopDetection());
     unawaited(_cardSubscription?.cancel());
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _ensureFocus() {
+    if (!mounted || _goingToPassword) return;
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    }
   }
 
   Future<void> _goToPassword() async {
@@ -59,39 +76,75 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
     ).pushNamedAndRemoveUntil('/senha', (_) => false, arguments: session);
   }
 
+  Future<void> _cancelOperation() async {
+    if (!mounted || _goingToPassword) return;
+    _goingToPassword = true;
+    _startDetectionTimer?.cancel();
+    await CardReaderService.instance.stopDetection();
+
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/erro',
+      (_) => false,
+      arguments: _journeySession,
+    );
+  }
+
   ProductJourneySession? get _journeySession {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     return arguments is ProductJourneySession ? arguments : null;
   }
 
+  void _handleKey(KeyEvent event) {
+    if (event is! KeyDownEvent || _goingToPassword) return;
+    if (PinpadKeys.isCancel(event.logicalKey)) {
+      unawaited(_cancelOperation());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AppFrame(
-      activeStep: 0,
-      child: ResponsiveTwoPane(
-        left: Padding(
-          padding: const EdgeInsets.only(left: 22, right: 10),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: const InstructionPanel(
-                title: 'Insira o cartão\n(com chip)',
-                messageSpans: [
-                  TextSpan(text: 'Insira o cartão na leitora\ncom o '),
-                  TextSpan(
-                    text: 'chip voltado para cima',
-                    style: TextStyle(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_cancelOperation());
+      },
+      child: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: _handleKey,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _ensureFocus,
+          child: AppFrame(
+            activeStep: 0,
+            child: ResponsiveTwoPane(
+              left: Padding(
+                padding: const EdgeInsets.only(left: 22, right: 10),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 430),
+                    child: const InstructionPanel(
+                      title: 'Insira o cartão\n(com chip)',
+                      messageSpans: [
+                        TextSpan(text: 'Insira o cartão na leitora\ncom o '),
+                        TextSpan(
+                          text: 'chip voltado para cima',
+                          style: TextStyle(
+                            color: AppColors.orange,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
+              right: const RepaintBoundary(child: _InsertCardAnimation()),
             ),
           ),
         ),
-        right: const RepaintBoundary(child: _InsertCardAnimation()),
       ),
     );
   }

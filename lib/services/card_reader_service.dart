@@ -10,6 +10,9 @@ enum CardReaderEventType {
   fingerprintDetected,
   fingerprintFailed,
   fingerprintError,
+  pinpadEnter,
+  pinpadCancel,
+  pinpadClear,
   ledError,
   unknown,
 }
@@ -180,6 +183,21 @@ class CardReaderService {
         debugPrint('Erro biometria digital: $data');
         _events.add(
           CardReaderEvent(CardReaderEventType.fingerprintError, data: data),
+        );
+        break;
+      case 'onPinpadEnter':
+        _events.add(
+          CardReaderEvent(CardReaderEventType.pinpadEnter, data: data),
+        );
+        break;
+      case 'onPinpadCancel':
+        _events.add(
+          CardReaderEvent(CardReaderEventType.pinpadCancel, data: data),
+        );
+        break;
+      case 'onPinpadClear':
+        _events.add(
+          CardReaderEvent(CardReaderEventType.pinpadClear, data: data),
         );
         break;
       case 'onLedError':

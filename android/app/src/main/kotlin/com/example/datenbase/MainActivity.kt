@@ -15,6 +15,7 @@ import android.os.CancellationSignal
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.view.KeyEvent
 import com.ftpos.apiservice.aidl.led.LedConfig
 import com.ftpos.apiservice.aidl.led.LedIndex
 import com.ftpos.apiservice.aidl.led.LedMode
@@ -129,6 +130,35 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val method = when (event.keyCode) {
+            KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_DPAD_CENTER -> "onPinpadEnter"
+            KeyEvent.KEYCODE_BACK,
+            KeyEvent.KEYCODE_ESCAPE -> "onPinpadCancel"
+            KeyEvent.KEYCODE_DEL,
+            KeyEvent.KEYCODE_FORWARD_DEL,
+            KeyEvent.KEYCODE_CLEAR -> "onPinpadClear"
+            else -> null
+        }
+
+        if (method != null) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                sendCardEvent(
+                    method,
+                    mapOf(
+                        "source" to "hardware_key",
+                        "keyCode" to event.keyCode
+                    )
+                )
+            }
+            return true
+        }
+
+        return super.dispatchKeyEvent(event)
     }
 
     private fun bindSdkService() {

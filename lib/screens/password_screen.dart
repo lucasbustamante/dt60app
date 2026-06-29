@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
@@ -17,6 +18,7 @@ class PasswordScreen extends StatefulWidget {
 
 class _PasswordScreenState extends State<PasswordScreen> {
   final FocusNode _focusNode = FocusNode();
+  StreamSubscription<CardReaderEvent>? _pinpadSubscription;
   Timer? _focusTimer;
   String _pin = '';
   bool _leaving = false;
@@ -25,6 +27,22 @@ class _PasswordScreenState extends State<PasswordScreen> {
   void initState() {
     super.initState();
     unawaited(CardReaderService.instance.setStatusLed('yellow'));
+    _pinpadSubscription = CardReaderService.instance.events.listen((event) {
+      if (_leaving) return;
+      switch (event.type) {
+        case CardReaderEventType.pinpadEnter:
+          _confirm();
+          break;
+        case CardReaderEventType.pinpadCancel:
+          _cancel();
+          break;
+        case CardReaderEventType.pinpadClear:
+          _clear();
+          break;
+        default:
+          break;
+      }
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFocus());
     _focusTimer = Timer.periodic(
@@ -36,6 +54,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
   @override
   void dispose() {
     _focusTimer?.cancel();
+    unawaited(_pinpadSubscription?.cancel());
     _focusNode.dispose();
     super.dispose();
   }
@@ -152,19 +171,17 @@ class _PasswordScreenState extends State<PasswordScreen> {
       return;
     }
 
-    if (key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter) {
+    if (PinpadKeys.isEnter(key)) {
       _confirm();
       return;
     }
 
-    if (key == LogicalKeyboardKey.backspace ||
-        key == LogicalKeyboardKey.delete) {
+    if (PinpadKeys.isClear(key)) {
       _clear();
       return;
     }
 
-    if (key == LogicalKeyboardKey.escape) {
+    if (PinpadKeys.isCancel(key)) {
       _cancel();
       return;
     }
@@ -172,46 +189,52 @@ class _PasswordScreenState extends State<PasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: _handleKey,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _ensureFocus,
-        child: AppFrame(
-          activeStep: 1,
-          child: ResponsiveTwoPane(
-            left: Padding(
-              padding: const EdgeInsets.only(left: 22, right: 10),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
-                  child: const InstructionPanel(
-                    title: 'Digite\na senha',
-                    messageSpans: [
-                      TextSpan(text: 'Digite sua senha no '),
-                      TextSpan(
-                        text: 'teclado físico',
-                        style: TextStyle(
-                          color: AppColors.orange,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: _handleKey,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _ensureFocus,
+          child: AppFrame(
+            activeStep: 1,
+            child: ResponsiveTwoPane(
+              left: Padding(
+                padding: const EdgeInsets.only(left: 22, right: 10),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 430),
+                    child: const InstructionPanel(
+                      title: 'Digite\na senha',
+                      messageSpans: [
+                        TextSpan(text: 'Digite sua senha no '),
+                        TextSpan(
+                          text: 'teclado físico',
+                          style: TextStyle(
+                            color: AppColors.orange,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0,
+                          ),
                         ),
-                      ),
-                      TextSpan(text: '\ndo pinpad para continuar.'),
-                    ],
-                    helpText: 'Toque aqui para falar',
-                    helpSubtitle: 'com nosso atendimento.',
+                        TextSpan(text: '\ndo pinpad para continuar.'),
+                      ],
+                      helpText: 'Toque aqui para falar',
+                      helpSubtitle: 'com nosso atendimento.',
+                    ),
                   ),
                 ),
               ),
-            ),
-            right: _PasswordPanel(
-              pin: _pin,
-              onCancel: _cancel,
-              onConfirm: _confirm,
-              onClear: _clear,
+              right: _PasswordPanel(
+                pin: _pin,
+                onCancel: _cancel,
+                onConfirm: _confirm,
+                onClear: _clear,
+              ),
             ),
           ),
         ),

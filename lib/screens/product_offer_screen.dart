@@ -1,97 +1,182 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
+import '../services/card_reader_service.dart';
+import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
-class ProductOfferScreen extends StatelessWidget {
+class ProductOfferScreen extends StatefulWidget {
   const ProductOfferScreen({super.key, required this.product});
 
   final BankProduct product;
 
-  void _hire(BuildContext context) {
-    final session = ProductJourneySession(product: product);
-    final insertCard = math.Random().nextDouble() < 0.60;
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      insertCard ? '/inserir-cartao' : '/cartao',
-      (_) => false,
-      arguments: session,
-    );
+  @override
+  State<ProductOfferScreen> createState() => _ProductOfferScreenState();
+}
+
+class _ProductOfferScreenState extends State<ProductOfferScreen> {
+  final FocusNode _focusNode = FocusNode();
+  late final StreamSubscription<CardReaderEvent> _pinpadSubscription;
+  bool _leaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pinpadSubscription = CardReaderService.instance.events.listen((event) {
+      if (_leaving) return;
+      switch (event.type) {
+        case CardReaderEventType.pinpadEnter:
+          _hire();
+          break;
+        case CardReaderEventType.pinpadCancel:
+          _cancel();
+          break;
+        default:
+          break;
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFocus());
   }
 
-  void _cancel(BuildContext context) {
+  @override
+  void dispose() {
+    unawaited(_pinpadSubscription.cancel());
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _ensureFocus() {
+    if (!mounted || _leaving) return;
+    if (!_focusNode.hasFocus) {
+      _focusNode.requestFocus();
+    }
+  }
+
+  void _hire() {
+    if (_leaving) return;
+    _leaving = true;
+    final session = ProductJourneySession(product: widget.product);
+    final route = switch (math.Random().nextInt(3)) {
+      0 => '/inserir-cartao',
+      1 => '/cartao',
+      _ => '/aproximar',
+    };
+
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(route, (_) => false, arguments: session);
+  }
+
+  void _cancel() {
+    if (_leaving) return;
+    _leaving = true;
     Navigator.of(context).pushNamedAndRemoveUntil('/erro', (_) => false);
+  }
+
+  void _handleKey(KeyEvent event) {
+    if (event is! KeyDownEvent || _leaving) return;
+
+    final key = event.logicalKey;
+    if (PinpadKeys.isEnter(key)) {
+      _hire();
+      return;
+    }
+
+    if (PinpadKeys.isCancel(key)) {
+      _cancel();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppFrame(
-      showSteps: false,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final media = MediaQuery.sizeOf(context);
-          final compactHeight =
-              media.height <= 460 || constraints.maxHeight <= 360;
-          final wide = constraints.maxWidth >= 680;
-          final contentPadding = compactHeight ? 12.0 : 18.0;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancel();
+      },
+      child: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: _handleKey,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _ensureFocus,
+          child: AppFrame(
+            showSteps: false,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final media = MediaQuery.sizeOf(context);
+                final compactHeight =
+                    media.height <= 460 || constraints.maxHeight <= 360;
+                final wide = constraints.maxWidth >= 680;
+                final contentPadding = compactHeight ? 12.0 : 18.0;
 
-          final content = wide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 8,
-                      child: _ProductSummary(
-                        product: product,
-                        compact: compactHeight,
-                      ),
-                    ),
-                    SizedBox(width: compactHeight ? 12 : 18),
-                    Expanded(
-                      flex: 7,
-                      child: _OfferDetails(
-                        product: product,
-                        compact: compactHeight,
-                        onHire: () => _hire(context),
-                        onCancel: () => _cancel(context),
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _ProductSummary(product: product, compact: compactHeight),
-                    const SizedBox(height: 14),
-                    _OfferDetails(
-                      product: product,
-                      compact: compactHeight,
-                      onHire: () => _hire(context),
-                      onCancel: () => _cancel(context),
-                    ),
-                  ],
-                );
+                final content = wide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 8,
+                            child: _ProductSummary(
+                              product: widget.product,
+                              compact: compactHeight,
+                            ),
+                          ),
+                          SizedBox(width: compactHeight ? 12 : 18),
+                          Expanded(
+                            flex: 7,
+                            child: _OfferDetails(
+                              product: widget.product,
+                              compact: compactHeight,
+                              onHire: _hire,
+                              onCancel: _cancel,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _ProductSummary(
+                            product: widget.product,
+                            compact: compactHeight,
+                          ),
+                          const SizedBox(height: 14),
+                          _OfferDetails(
+                            product: widget.product,
+                            compact: compactHeight,
+                            onHire: _hire,
+                            onCancel: _cancel,
+                          ),
+                        ],
+                      );
 
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 980),
-              child: SingleChildScrollView(
-                padding: EdgeInsets.all(contentPadding),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: math.max(
-                      0,
-                      constraints.maxHeight - contentPadding * 2,
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 980),
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(contentPadding),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: math.max(
+                            0,
+                            constraints.maxHeight - contentPadding * 2,
+                          ),
+                        ),
+                        child: content,
+                      ),
                     ),
                   ),
-                  child: content,
-                ),
-              ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
