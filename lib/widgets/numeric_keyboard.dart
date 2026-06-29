@@ -25,33 +25,70 @@ class NumericKeyboard extends StatelessWidget {
       child: Column(
         children: [
           _KeyboardRow(
-            children: [
-              _KeyboardButton(label: '1', buttonSize: buttonSize, onTap: () => onNumber(1)),
-              _KeyboardButton(label: '2', buttonSize: buttonSize, onTap: () => onNumber(2)),
-              _KeyboardButton(label: '3', buttonSize: buttonSize, onTap: () => onNumber(3)),
-            ],
             buttonSize: buttonSize,
+            children: [
+              _KeyboardButton(
+                label: '1',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(1),
+              ),
+              _KeyboardButton(
+                label: '2',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(2),
+              ),
+              _KeyboardButton(
+                label: '3',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(3),
+              ),
+            ],
           ),
           SizedBox(height: rowGap),
           _KeyboardRow(
-            children: [
-              _KeyboardButton(label: '4', buttonSize: buttonSize, onTap: () => onNumber(4)),
-              _KeyboardButton(label: '5', buttonSize: buttonSize, onTap: () => onNumber(5)),
-              _KeyboardButton(label: '6', buttonSize: buttonSize, onTap: () => onNumber(6)),
-            ],
             buttonSize: buttonSize,
+            children: [
+              _KeyboardButton(
+                label: '4',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(4),
+              ),
+              _KeyboardButton(
+                label: '5',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(5),
+              ),
+              _KeyboardButton(
+                label: '6',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(6),
+              ),
+            ],
           ),
           SizedBox(height: rowGap),
           _KeyboardRow(
-            children: [
-              _KeyboardButton(label: '7', buttonSize: buttonSize, onTap: () => onNumber(7)),
-              _KeyboardButton(label: '8', buttonSize: buttonSize, onTap: () => onNumber(8)),
-              _KeyboardButton(label: '9', buttonSize: buttonSize, onTap: () => onNumber(9)),
-            ],
             buttonSize: buttonSize,
+            children: [
+              _KeyboardButton(
+                label: '7',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(7),
+              ),
+              _KeyboardButton(
+                label: '8',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(8),
+              ),
+              _KeyboardButton(
+                label: '9',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(9),
+              ),
+            ],
           ),
           SizedBox(height: rowGap),
           _KeyboardRow(
+            buttonSize: buttonSize,
             children: [
               _KeyboardButton(
                 semanticLabel: 'Apagar último dígito',
@@ -59,7 +96,11 @@ class NumericKeyboard extends StatelessWidget {
                 buttonSize: buttonSize,
                 onTap: onBackspace,
               ),
-              _KeyboardButton(label: '0', buttonSize: buttonSize, onTap: () => onNumber(0)),
+              _KeyboardButton(
+                label: '0',
+                buttonSize: buttonSize,
+                onTap: () => onNumber(0),
+              ),
               _KeyboardButton(
                 label: 'Limpar',
                 compactText: true,
@@ -67,7 +108,6 @@ class NumericKeyboard extends StatelessWidget {
                 onTap: onClear,
               ),
             ],
-            buttonSize: buttonSize,
           ),
         ],
       ),
@@ -76,10 +116,7 @@ class NumericKeyboard extends StatelessWidget {
 }
 
 class _KeyboardRow extends StatelessWidget {
-  const _KeyboardRow({
-    required this.children,
-    required this.buttonSize,
-  });
+  const _KeyboardRow({required this.children, required this.buttonSize});
 
   final List<Widget> children;
   final double buttonSize;
@@ -141,9 +178,13 @@ class _KeyboardButton extends StatelessWidget {
                           label ?? '',
                           maxLines: 1,
                           style: TextStyle(
-                            color: compactText ? AppColors.orange : Colors.black,
-                            fontSize: compactText ? buttonSize * 0.22 : buttonSize * 0.38,
-                            fontWeight: compactText ? FontWeight.w700 : FontWeight.w400,
+                            color:
+                                compactText ? AppColors.orange : Colors.black,
+                            fontSize: compactText
+                                ? buttonSize * 0.22
+                                : buttonSize * 0.38,
+                            fontWeight:
+                                compactText ? FontWeight.w700 : FontWeight.w400,
                             letterSpacing: 0,
                           ),
                         ),

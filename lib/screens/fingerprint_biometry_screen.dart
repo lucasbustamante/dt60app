@@ -11,7 +11,8 @@ class FingerprintBiometryScreen extends StatefulWidget {
   const FingerprintBiometryScreen({super.key});
 
   @override
-  State<FingerprintBiometryScreen> createState() => _FingerprintBiometryScreenState();
+  State<FingerprintBiometryScreen> createState() =>
+      _FingerprintBiometryScreenState();
 }
 
 class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
@@ -45,34 +46,34 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   @override
   Widget build(BuildContext context) {
     return AppFrame(
-        activeStep: 2,
-        child: ResponsiveTwoPane(
-          left: Padding(
-            padding: const EdgeInsets.only(left: 22, right: 10),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: const InstructionPanel(
-                  title: 'Biometria\ndigital',
-                  messageSpans: [
-                    TextSpan(text: 'Coloque o dedo no '),
-                    TextSpan(
-                      text: 'sensor de biometria',
-                      style: TextStyle(
-                        color: AppColors.orange,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0,
-                      ),
+      activeStep: 2,
+      child: ResponsiveTwoPane(
+        left: Padding(
+          padding: const EdgeInsets.only(left: 22, right: 10),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: const InstructionPanel(
+                title: 'Biometria\ndigital',
+                messageSpans: [
+                  TextSpan(text: 'Coloque o dedo no '),
+                  TextSpan(
+                    text: 'sensor de biometria',
+                    style: TextStyle(
+                      color: AppColors.orange,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0,
                     ),
-                    TextSpan(text: '\ne aguarde a leitura.'),
-                  ],
-                ),
+                  ),
+                  TextSpan(text: '\ne aguarde a leitura.'),
+                ],
               ),
             ),
           ),
-          right: const _FingerprintAnimation(),
         ),
-      );
+        right: const _FingerprintAnimation(),
+      ),
+    );
   }
 }
 
@@ -151,7 +152,7 @@ class _FingerprintAnimationState extends State<_FingerprintAnimation>
                           color: AppColors.white,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: AppColors.orange.withOpacity(.32),
+                            color: AppColors.orange.withValues(alpha: .32),
                             width: 2,
                           ),
                           boxShadow: const [
@@ -224,7 +225,7 @@ class _FingerprintPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 8
-      ..color = AppColors.text.withOpacity(.22 + progress * .35);
+      ..color = AppColors.text.withValues(alpha: .22 + progress * .35);
 
     for (var i = 0; i < 8; i++) {
       final rect = Rect.fromCenter(
@@ -241,7 +242,7 @@ class _FingerprintPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 9
-      ..color = AppColors.orange.withOpacity(.72);
+      ..color = AppColors.orange.withValues(alpha: .72);
 
     canvas.drawArc(
       Rect.fromCenter(center: center, width: 64, height: 90),

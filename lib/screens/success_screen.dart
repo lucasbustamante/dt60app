@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -55,6 +56,14 @@ class _SuccessScreenState extends State<SuccessScreen>
 
   @override
   Widget build(BuildContext context) {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    final session = arguments is ProductJourneySession ? arguments : null;
+    final title = session == null
+        ? 'Operação aprovada'
+        : 'Operação realizada com sucesso';
+    final message = session?.product.successMessage ??
+        'Tudo certo. A conclusão foi registrada com segurança.';
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _backToStandby,
@@ -71,10 +80,10 @@ class _SuccessScreenState extends State<SuccessScreen>
                     width: 132,
                     height: 132,
                     decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
+                      color: AppColors.success.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.success.withOpacity(0.28),
+                        color: AppColors.success.withValues(alpha: 0.28),
                         width: 1.5,
                       ),
                     ),
@@ -85,10 +94,10 @@ class _SuccessScreenState extends State<SuccessScreen>
                     ),
                   ),
                   const SizedBox(height: 30),
-                  const Text(
-                    'Operação aprovada',
+                  Text(
+                    title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.text,
                       fontSize: 42,
                       height: 1.08,
@@ -97,10 +106,10 @@ class _SuccessScreenState extends State<SuccessScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Tudo certo. A conclusão foi registrada com segurança.',
+                  Text(
+                    message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 18,
                       height: 1.35,
@@ -127,9 +136,7 @@ class _SuccessScreenState extends State<SuccessScreen>
 }
 
 class _AutoReturnProgress extends StatelessWidget {
-  const _AutoReturnProgress({
-    required this.controller,
-  });
+  const _AutoReturnProgress({required this.controller});
 
   final AnimationController controller;
 
@@ -146,20 +153,17 @@ class _AutoReturnProgress extends StatelessWidget {
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, child) {
-          final remaining = (controller.duration!.inSeconds *
-              (1 - controller.value))
-              .ceil()
-              .clamp(0, controller.duration!.inSeconds);
+          final remaining =
+              (controller.duration!.inSeconds * (1 - controller.value))
+                  .ceil()
+                  .clamp(0, controller.duration!.inSeconds);
 
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.timer_outlined,
-                    color: AppColors.success,
-                  ),
+                  const Icon(Icons.timer_outlined, color: AppColors.success),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

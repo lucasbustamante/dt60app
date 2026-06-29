@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -21,6 +22,7 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(CardReaderService.instance.setStatusLed('blue'));
     _cardSubscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.icInserted ||
           event.type == CardReaderEventType.magSwiped ||
@@ -41,13 +43,21 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
   Future<void> _goToPassword() async {
     if (!mounted || _goingToPassword) return;
     _goingToPassword = true;
+    final session = _journeySession;
 
     await CardReaderService.instance.stopDetection();
     await CardReaderService.instance.playFixedLedLoading();
     await Future<void>.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/senha', (_) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/senha', (_) => false, arguments: session);
+  }
+
+  ProductJourneySession? get _journeySession {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    return arguments is ProductJourneySession ? arguments : null;
   }
 
   @override
@@ -72,7 +82,6 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
                       letterSpacing: 0,
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -133,8 +142,9 @@ class _InsertCardAnimationState extends State<_InsertCardAnimation>
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  final value =
-                  Curves.easeInOutCubic.transform(_controller.value);
+                  final value = Curves.easeInOutCubic.transform(
+                    _controller.value,
+                  );
 
                   return Stack(
                     clipBehavior: Clip.none,
@@ -202,7 +212,7 @@ class _InsertSlot extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.orange.withOpacity(0.28),
+          color: AppColors.orange.withValues(alpha: 0.28),
           width: 1.2,
         ),
         boxShadow: const [
@@ -218,10 +228,7 @@ class _InsertSlot extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF331303),
-              Colors.black,
-            ],
+            colors: [Color(0xFF331303), Colors.black],
           ),
           borderRadius: BorderRadius.circular(7),
           boxShadow: const [
@@ -249,17 +256,10 @@ class _InsertCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF7A00),
-            Color(0xFFFF6200),
-            AppColors.orangeDark,
-          ],
+          colors: [Color(0xFFFF7A00), Color(0xFFFF6200), AppColors.orangeDark],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Color(0xFFFFC39A),
-          width: 1.1,
-        ),
+        border: Border.all(color: Color(0xFFFFC39A), width: 1.1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x3A000000),
@@ -270,11 +270,7 @@ class _InsertCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _CardPatternPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _CardPatternPainter())),
           const Positioned(
             top: 34,
             left: 34,
@@ -292,9 +288,7 @@ class _InsertCard extends StatelessWidget {
             top: 110,
             left: 0,
             right: 0,
-            child: Center(
-              child: _InsertChip(),
-            ),
+            child: Center(child: _InsertChip()),
           ),
           const Positioned(
             right: 30,
@@ -328,21 +322,12 @@ class _InsertChip extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFE49A),
-            Color(0xFFD5A83E),
-            Color(0xFFB88725),
-          ],
+          colors: [Color(0xFFFFE49A), Color(0xFFD5A83E), Color(0xFFB88725)],
         ),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: Color(0xFF7A5A1F),
-          width: 1,
-        ),
+        border: Border.all(color: Color(0xFF7A5A1F), width: 1),
       ),
-      child: CustomPaint(
-        painter: _ChipPainter(),
-      ),
+      child: CustomPaint(painter: _ChipPainter()),
     );
   }
 }
@@ -351,7 +336,7 @@ class _CardPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.16)
+      ..color = Colors.white.withValues(alpha: 0.16)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
@@ -387,7 +372,7 @@ class _ChipPainter extends CustomPainter {
       ..strokeWidth = 1.1;
 
     final softPaint = Paint()
-      ..color = const Color(0xFF74521D).withOpacity(0.45)
+      ..color = const Color(0xFF74521D).withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 

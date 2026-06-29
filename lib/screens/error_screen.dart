@@ -71,10 +71,10 @@ class _ErrorScreenState extends State<ErrorScreen>
                     width: 132,
                     height: 132,
                     decoration: BoxDecoration(
-                      color: AppColors.danger.withOpacity(0.09),
+                      color: AppColors.danger.withValues(alpha: 0.09),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.danger.withOpacity(0.26),
+                        color: AppColors.danger.withValues(alpha: 0.26),
                         width: 1.5,
                       ),
                     ),
@@ -130,9 +130,7 @@ class _ErrorScreenState extends State<ErrorScreen>
 }
 
 class _AutoReturnProgress extends StatelessWidget {
-  const _AutoReturnProgress({
-    required this.controller,
-  });
+  const _AutoReturnProgress({required this.controller});
 
   final AnimationController controller;
 
@@ -149,20 +147,17 @@ class _AutoReturnProgress extends StatelessWidget {
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, child) {
-          final remaining = (controller.duration!.inSeconds *
-              (1 - controller.value))
-              .ceil()
-              .clamp(0, controller.duration!.inSeconds);
+          final remaining =
+              (controller.duration!.inSeconds * (1 - controller.value))
+                  .ceil()
+                  .clamp(0, controller.duration!.inSeconds);
 
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.timer_outlined,
-                    color: AppColors.danger,
-                  ),
+                  const Icon(Icons.timer_outlined, color: AppColors.danger),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

@@ -28,7 +28,9 @@ class CardReaderService {
 
   static final CardReaderService instance = CardReaderService._();
 
-  static const MethodChannel _channel = MethodChannel('pinpad_terminal/card_reader');
+  static const MethodChannel _channel = MethodChannel(
+    'pinpad_terminal/card_reader',
+  );
 
   final StreamController<CardReaderEvent> _events =
       StreamController<CardReaderEvent>.broadcast();
@@ -134,7 +136,9 @@ class CardReaderService {
       case 'cardInserted':
       case 'onIcCardDetected':
       case 'onIcCardInserted':
-        _events.add(CardReaderEvent(CardReaderEventType.icInserted, data: data));
+        _events.add(
+          CardReaderEvent(CardReaderEventType.icInserted, data: data),
+        );
         break;
       case 'onMagCardDetected':
       case 'onMagCardSwiped':
@@ -147,20 +151,28 @@ class CardReaderService {
       case 'onContactlessCardDetected':
       case 'onNfcPollingDetected':
       case 'onContactlessDetected':
-        _events.add(CardReaderEvent(CardReaderEventType.nfcApproached, data: data));
+        _events.add(
+          CardReaderEvent(CardReaderEventType.nfcApproached, data: data),
+        );
         break;
       case 'onFingerprintDetected':
       case 'onFingerDetected':
       case 'onFingerTouched':
-        _events.add(CardReaderEvent(CardReaderEventType.fingerprintDetected, data: data));
+        _events.add(
+          CardReaderEvent(CardReaderEventType.fingerprintDetected, data: data),
+        );
         break;
       case 'onFingerprintFailed':
       case 'onFingerprintCancelled':
-        _events.add(CardReaderEvent(CardReaderEventType.fingerprintFailed, data: data));
+        _events.add(
+          CardReaderEvent(CardReaderEventType.fingerprintFailed, data: data),
+        );
         break;
       case 'onFingerprintError':
         debugPrint('Erro biometria digital: $data');
-        _events.add(CardReaderEvent(CardReaderEventType.fingerprintError, data: data));
+        _events.add(
+          CardReaderEvent(CardReaderEventType.fingerprintError, data: data),
+        );
         break;
       case 'onLedError':
         debugPrint('Erro LED: $data');

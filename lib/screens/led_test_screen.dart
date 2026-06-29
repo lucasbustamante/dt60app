@@ -41,6 +41,13 @@ class _LedTestScreenState extends State<LedTestScreen> {
     setState(() => _lastAction = 'Todos os LEDs desligados');
   }
 
+  Future<void> _loading() async {
+    setState(() => _lastAction = 'Executando: carregamento azul');
+    await CardReaderService.instance.playFixedLedLoading();
+    if (!mounted) return;
+    setState(() => _lastAction = 'Último teste: carregamento azul');
+  }
+
   @override
   void dispose() {
     unawaited(CardReaderService.instance.ledOff());
@@ -77,8 +84,9 @@ class _LedTestScreenState extends State<LedTestScreen> {
                   ),
                   const SizedBox(width: 10),
                   OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context)
-                        .pushNamedAndRemoveUntil('/', (_) => false),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushNamedAndRemoveUntil('/', (_) => false),
                     icon: const Icon(Icons.home_outlined),
                     label: const Text('Início'),
                   ),
@@ -86,7 +94,10 @@ class _LedTestScreenState extends State<LedTestScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -107,46 +118,250 @@ class _LedTestScreenState extends State<LedTestScreen> {
                   child: Column(
                     children: [
                       _Section(
+                        title: 'Cores do fluxo',
+                        subtitle:
+                            'Testa os estados usados nas jornadas de contratação.',
+                        children: [
+                          _LedButton(
+                            'Erro vermelho',
+                            Icons.cancel,
+                            () => _run(
+                              label: 'Fluxo erro vermelho',
+                              target: 'all',
+                              color: 'red',
+                            ),
+                          ),
+                          _LedButton(
+                            'Sucesso verde',
+                            Icons.check_circle,
+                            () => _run(
+                              label: 'Fluxo sucesso verde',
+                              target: 'all',
+                              color: 'green',
+                            ),
+                          ),
+                          _LedButton(
+                            'Cartão azul',
+                            Icons.credit_card_outlined,
+                            () => _run(
+                              label: 'Fluxo cartão azul',
+                              target: 'all',
+                              color: 'blue',
+                            ),
+                          ),
+                          _LedButton(
+                            'Senha amarelo',
+                            Icons.lock_outline,
+                            () => _run(
+                              label: 'Fluxo senha amarelo',
+                              target: 'all',
+                              color: 'yellow',
+                            ),
+                          ),
+                          _LedButton(
+                            'Face roxo',
+                            Icons.face,
+                            () => _run(
+                              label: 'Fluxo face roxo',
+                              target: 'all',
+                              color: 'purple',
+                            ),
+                          ),
+                          _LedButton(
+                            'Face branco',
+                            Icons.light_mode,
+                            () => _run(
+                              label: 'Fluxo face branco',
+                              target: 'all',
+                              color: 'white',
+                            ),
+                          ),
+                          _LedButton('Carregamento', Icons.sync, _loading),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _Section(
                         title: 'LEDs fixos do leitor',
                         subtitle: 'Testa os LEDs fixos já mapeados pelo SDK.',
                         children: [
-                          _LedButton('Azul', Icons.circle, () => _run(label: 'Fixo azul', target: 'fixed', color: 'blue')),
-                          _LedButton('Verde', Icons.check_circle, () => _run(label: 'Fixo verde', target: 'fixed', color: 'green')),
-                          _LedButton('Vermelho', Icons.cancel, () => _run(label: 'Fixo vermelho', target: 'fixed', color: 'red')),
-                          _LedButton('Amarelo', Icons.circle_outlined, () => _run(label: 'Fixo amarelo', target: 'fixed', color: 'yellow')),
-                          _LedButton('Desligar fixos', Icons.power_settings_new, () => _run(label: 'Fixos desligados', target: 'fixed', color: 'off')),
+                          _LedButton(
+                            'Azul',
+                            Icons.circle,
+                            () => _run(
+                              label: 'Fixo azul',
+                              target: 'fixed',
+                              color: 'blue',
+                            ),
+                          ),
+                          _LedButton(
+                            'Verde',
+                            Icons.check_circle,
+                            () => _run(
+                              label: 'Fixo verde',
+                              target: 'fixed',
+                              color: 'green',
+                            ),
+                          ),
+                          _LedButton(
+                            'Vermelho',
+                            Icons.cancel,
+                            () => _run(
+                              label: 'Fixo vermelho',
+                              target: 'fixed',
+                              color: 'red',
+                            ),
+                          ),
+                          _LedButton(
+                            'Amarelo',
+                            Icons.circle_outlined,
+                            () => _run(
+                              label: 'Fixo amarelo',
+                              target: 'fixed',
+                              color: 'yellow',
+                            ),
+                          ),
+                          _LedButton(
+                            'Desligar fixos',
+                            Icons.power_settings_new,
+                            () => _run(
+                              label: 'Fixos desligados',
+                              target: 'fixed',
+                              color: 'off',
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       _Section(
                         title: 'RGB acima da tela',
-                        subtitle: 'Usa o LED RGB superior. Roxo é o comportamento observado no sucesso.',
+                        subtitle:
+                            'Usa o LED RGB superior. Roxo é o comportamento observado no sucesso.',
                         children: [
-                          _LedButton('Roxo', Icons.auto_awesome, () => _run(label: 'Superior roxo', target: 'top_rgb', color: 'purple')),
-                          _LedButton('Azul', Icons.circle, () => _run(label: 'Superior azul', target: 'top_rgb', color: 'blue')),
-                          _LedButton('Verde', Icons.check_circle, () => _run(label: 'Superior verde', target: 'top_rgb', color: 'green')),
-                          _LedButton('Vermelho', Icons.cancel, () => _run(label: 'Superior vermelho', target: 'top_rgb', color: 'red')),
-                          _LedButton('Branco', Icons.light_mode, () => _run(label: 'Superior branco', target: 'top_rgb', color: 'white')),
-                          _LedButton('Respirar roxo', Icons.blur_on, () => _run(label: 'Superior respirar roxo', target: 'top_rgb', color: 'purple', effect: 'breath')),
-                          _LedButton('Desligar superior', Icons.power_settings_new, () => _run(label: 'Superior desligado', target: 'top_rgb', color: 'off')),
+                          _LedButton(
+                            'Roxo',
+                            Icons.auto_awesome,
+                            () => _run(
+                              label: 'Superior roxo',
+                              target: 'top_rgb',
+                              color: 'purple',
+                            ),
+                          ),
+                          _LedButton(
+                            'Azul',
+                            Icons.circle,
+                            () => _run(
+                              label: 'Superior azul',
+                              target: 'top_rgb',
+                              color: 'blue',
+                            ),
+                          ),
+                          _LedButton(
+                            'Verde',
+                            Icons.check_circle,
+                            () => _run(
+                              label: 'Superior verde',
+                              target: 'top_rgb',
+                              color: 'green',
+                            ),
+                          ),
+                          _LedButton(
+                            'Vermelho',
+                            Icons.cancel,
+                            () => _run(
+                              label: 'Superior vermelho',
+                              target: 'top_rgb',
+                              color: 'red',
+                            ),
+                          ),
+                          _LedButton(
+                            'Branco',
+                            Icons.light_mode,
+                            () => _run(
+                              label: 'Superior branco',
+                              target: 'top_rgb',
+                              color: 'white',
+                            ),
+                          ),
+                          _LedButton(
+                            'Respirar roxo',
+                            Icons.blur_on,
+                            () => _run(
+                              label: 'Superior respirar roxo',
+                              target: 'top_rgb',
+                              color: 'purple',
+                              effect: 'breath',
+                            ),
+                          ),
+                          _LedButton(
+                            'Desligar superior',
+                            Icons.power_settings_new,
+                            () => _run(
+                              label: 'Superior desligado',
+                              target: 'top_rgb',
+                              color: 'off',
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       _Section(
-                        title: 'RGB circular do finger (tapeLamp/breath/marquee)',
-                        subtitle: 'Testa comandos diretos e códigos da faixa/anel para você mapear no aparelho.',
+                        title:
+                            'RGB circular do finger (tapeLamp/breath/marquee)',
+                        subtitle:
+                            'Testa comandos diretos e códigos da faixa/anel para você mapear no aparelho.',
                         children: [
-                          _LedButton('Finger vermelho', Icons.fingerprint, () => _run(label: 'Finger vermelho', target: 'finger_rgb', color: 'red')),
-                          _LedButton('Finger verde', Icons.fingerprint, () => _run(label: 'Finger verde', target: 'finger_rgb', color: 'green')),
-                          _LedButton('Finger azul', Icons.fingerprint, () => _run(label: 'Finger azul', target: 'finger_rgb', color: 'blue')),
-                          _LedButton('Finger roxo', Icons.fingerprint, () => _run(label: 'Finger roxo', target: 'finger_rgb', color: 'purple')),
-                          _LedButton('Desligar finger', Icons.power_settings_new, () => _run(label: 'Finger desligado', target: 'finger_rgb', color: 'off')),
+                          _LedButton(
+                            'Finger vermelho',
+                            Icons.fingerprint,
+                            () => _run(
+                              label: 'Finger vermelho',
+                              target: 'finger_rgb',
+                              color: 'red',
+                            ),
+                          ),
+                          _LedButton(
+                            'Finger verde',
+                            Icons.fingerprint,
+                            () => _run(
+                              label: 'Finger verde',
+                              target: 'finger_rgb',
+                              color: 'green',
+                            ),
+                          ),
+                          _LedButton(
+                            'Finger azul',
+                            Icons.fingerprint,
+                            () => _run(
+                              label: 'Finger azul',
+                              target: 'finger_rgb',
+                              color: 'blue',
+                            ),
+                          ),
+                          _LedButton(
+                            'Finger roxo',
+                            Icons.fingerprint,
+                            () => _run(
+                              label: 'Finger roxo',
+                              target: 'finger_rgb',
+                              color: 'purple',
+                            ),
+                          ),
+                          _LedButton(
+                            'Desligar finger',
+                            Icons.power_settings_new,
+                            () => _run(
+                              label: 'Finger desligado',
+                              target: 'finger_rgb',
+                              color: 'off',
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
                       _Section(
                         title: 'Mapeamento do anel / light strip',
-                        subtitle: 'Aperte cada código e anote qual LED/cor acendeu no equipamento.',
+                        subtitle:
+                            'Aperte cada código e anote qual LED/cor acendeu no equipamento.',
                         children: List.generate(
                           9,
                           (index) => _LedButton(
@@ -215,11 +430,7 @@ class _Section extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: children,
-          ),
+          Wrap(spacing: 8, runSpacing: 8, children: children),
         ],
       ),
     );
@@ -241,17 +452,10 @@ class _LedButton extends StatelessWidget {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, size: 18),
-        label: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          textStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-          ),
+          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
         ),
       ),
     );

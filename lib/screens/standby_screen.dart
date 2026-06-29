@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
 import '../widgets/ad_carousel.dart';
 import '../widgets/app_frame.dart';
 
@@ -17,9 +16,7 @@ class StandbyScreen extends StatelessWidget {
           final intro = const InstructionPanel(
             title: 'Conheça soluções feitas para você',
             maxWidth: 360,
-            messageSpans: [
-
-            ],
+            messageSpans: [],
             helpText: 'Toque aqui para falar',
             helpSubtitle: 'com nosso atendimento.',
           );
@@ -29,19 +26,13 @@ class StandbyScreen extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 6,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: intro,
-                  ),
+                  child: Align(alignment: Alignment.centerLeft, child: intro),
                 ),
                 //const SizedBox(width: 26),
                 Expanded(
                   flex: 10,
                   child: Center(
-                    child: SizedBox(
-                      height: 100,
-                      child: const AdCarousel(),
-                    ),
+                    child: SizedBox(height: 100, child: const AdCarousel()),
                   ),
                 ),
               ],
@@ -53,11 +44,8 @@ class StandbyScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 intro,
-                Container(
-                    height: 300,
-                    child: const AdCarousel()),
+                const SizedBox(height: 300, child: AdCarousel()),
                 const SizedBox(height: 10),
-
               ],
             ),
           );

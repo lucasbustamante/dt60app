@@ -40,19 +40,18 @@ class AppFrame extends StatelessWidget {
                 ? 8.0
                 : (isPinpadLandscape ? 12.0 : (compact ? 20.0 : 48.0));
 
-            final topPadding =
-            miniLandscape ? 0.0 : (isPinpadLandscape ? 0.0 : (compact ? 6.0 : 10.0));
+            final topPadding = miniLandscape
+                ? 0.0
+                : (isPinpadLandscape ? 0.0 : (compact ? 6.0 : 10.0));
 
-            final bottomPadding =
-            miniLandscape ? 2.0 : (isPinpadLandscape ? 3.0 : (compact ? 18.0 : 26.0));
+            final bottomPadding = miniLandscape
+                ? 2.0
+                : (isPinpadLandscape ? 3.0 : (compact ? 18.0 : 26.0));
 
             return SizedBox.expand(
               child: Column(
                 children: [
-                  _Header(
-                    activeStep: activeStep,
-                    showSteps: showSteps,
-                  ),
+                  _Header(activeStep: activeStep, showSteps: showSteps),
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -94,10 +93,10 @@ class ResponsiveTwoPane extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 560;
-        final miniLandscape =
-            MediaQuery.sizeOf(context).height <= 460 || constraints.maxHeight <= 330;
-        final dense =
-            MediaQuery.sizeOf(context).height <= 650 || constraints.maxHeight <= 430;
+        final miniLandscape = MediaQuery.sizeOf(context).height <= 460 ||
+            constraints.maxHeight <= 330;
+        final dense = MediaQuery.sizeOf(context).height <= 650 ||
+            constraints.maxHeight <= 430;
 
         if (wide) {
           return Row(
@@ -130,9 +129,7 @@ class ResponsiveTwoPane extends StatelessWidget {
 
         return SingleChildScrollView(
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight,
-            ),
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -169,23 +166,23 @@ class InstructionPanel extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 520;
-        final miniLandscape =
-            MediaQuery.sizeOf(context).height <= 460 || constraints.maxHeight <= 330;
-        final dense =
-            MediaQuery.sizeOf(context).height <= 650 || constraints.maxHeight <= 430;
+        final miniLandscape = MediaQuery.sizeOf(context).height <= 460 ||
+            constraints.maxHeight <= 330;
+        final dense = MediaQuery.sizeOf(context).height <= 650 ||
+            constraints.maxHeight <= 430;
 
         final titleStyle = (compact || dense)
             ? AppTextStyles.titleCompact.copyWith(
-          fontSize: miniLandscape ? 20 : (dense ? 25 : null),
-          height: miniLandscape ? 0.98 : (dense ? 1.02 : null),
-        )
+                fontSize: miniLandscape ? 20 : (dense ? 25 : null),
+                height: miniLandscape ? 0.98 : (dense ? 1.02 : null),
+              )
             : AppTextStyles.title;
 
         final bodyStyle = (compact || dense)
             ? AppTextStyles.bodyCompact.copyWith(
-          fontSize: miniLandscape ? 11.5 : (dense ? 13 : null),
-          height: miniLandscape ? 1.12 : (dense ? 1.2 : null),
-        )
+                fontSize: miniLandscape ? 11.5 : (dense ? 13 : null),
+                height: miniLandscape ? 1.12 : (dense ? 1.2 : null),
+              )
             : AppTextStyles.body;
 
         return ConstrainedBox(
@@ -206,18 +203,11 @@ class InstructionPanel extends StatelessWidget {
               ),
               SizedBox(height: miniLandscape ? 5 : (dense ? 8 : 28)),
               RichText(
-                text: TextSpan(
-                  style: bodyStyle,
-                  children: messageSpans,
-                ),
+                text: TextSpan(style: bodyStyle, children: messageSpans),
               ),
               if (!miniLandscape) SizedBox(height: dense ? 10 : 70),
               if (!miniLandscape)
-                HelpCard(
-                  text: helpText,
-                  subtitle: helpSubtitle,
-                  dense: dense,
-                ),
+                HelpCard(text: helpText, subtitle: helpSubtitle, dense: dense),
             ],
           ),
         );
@@ -310,10 +300,7 @@ class HelpCard extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({
-    required this.activeStep,
-    required this.showSteps,
-  });
+  const _Header({required this.activeStep, required this.showSteps});
 
   final int? activeStep;
   final bool showSteps;
@@ -327,11 +314,15 @@ class _Header extends StatelessWidget {
         final dense = MediaQuery.sizeOf(context).height <= 650;
 
         final horizontal =
-        miniLandscape ? 8.0 : (dense ? 14.0 : (compact ? 22.0 : 42.0));
+            miniLandscape ? 8.0 : (dense ? 14.0 : (compact ? 22.0 : 42.0));
 
         final height = showSteps
-            ? (miniLandscape ? 82.0 : (dense ? 88.0 : (compact ? 138.0 : 122.0)))
-            : (miniLandscape ? 46.0 : (dense ? 58.0 : (compact ? 96.0 : 112.0)));
+            ? (miniLandscape
+                ? 82.0
+                : (dense ? 88.0 : (compact ? 138.0 : 122.0)))
+            : (miniLandscape
+                ? 46.0
+                : (dense ? 58.0 : (compact ? 96.0 : 112.0)));
 
         return SizedBox(
           height: height,
@@ -354,22 +345,13 @@ class _Header extends StatelessWidget {
   Widget _wideHeader() {
     return Stack(
       children: [
-        const Align(
-          alignment: Alignment.topLeft,
-          child: _BrandMark(),
-        ),
+        const Align(alignment: Alignment.topLeft, child: _BrandMark()),
         if (showSteps)
           Align(
             alignment: Alignment.topCenter,
-            child: _ProcessSteps(
-              activeStep: activeStep,
-              compact: false,
-            ),
+            child: _ProcessSteps(activeStep: activeStep, compact: false),
           ),
-        const Align(
-          alignment: Alignment.topRight,
-          child: _DeviceStatus(),
-        ),
+        const Align(alignment: Alignment.topRight, child: _DeviceStatus()),
       ],
     );
   }
@@ -381,17 +363,11 @@ class _Header extends StatelessWidget {
         const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _BrandMark(compact: true),
-            _DeviceStatus(compact: true),
-          ],
+          children: [_BrandMark(compact: true), _DeviceStatus(compact: true)],
         ),
         if (showSteps) ...[
           const SizedBox(height: 8),
-          _ProcessSteps(
-            activeStep: activeStep,
-            compact: true,
-          ),
+          _ProcessSteps(activeStep: activeStep, compact: true),
         ],
       ],
     );
@@ -421,10 +397,7 @@ class _BrandMark extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                AppColors.orange,
-                AppColors.orangeDark,
-              ],
+              colors: [AppColors.orange, AppColors.orangeDark],
             ),
             borderRadius: BorderRadius.circular(5),
             boxShadow: const [
@@ -462,20 +435,12 @@ class _BrandMark extends StatelessWidget {
 }
 
 class _ProcessSteps extends StatelessWidget {
-  const _ProcessSteps({
-    required this.activeStep,
-    required this.compact,
-  });
+  const _ProcessSteps({required this.activeStep, required this.compact});
 
   final int? activeStep;
   final bool compact;
 
-  static const _labels = [
-    'Cartão',
-    'Senha',
-    'Biometria',
-    'Conclusão',
-  ];
+  static const _labels = ['Cartão', 'Senha', 'Biometria', 'Conclusão'];
 
   static const _icons = [
     Icons.credit_card_outlined,
@@ -537,8 +502,10 @@ class _StepNode extends StatelessWidget {
     final miniLandscape = MediaQuery.sizeOf(context).height <= 460;
     final dense = MediaQuery.sizeOf(context).height <= 650;
 
-    final size = miniLandscape ? 21.0 : (dense ? 26.0 : (compact ? 38.0 : 48.0));
-    final width = miniLandscape ? 48.0 : (dense ? 58.0 : (compact ? 64.0 : 82.0));
+    final size =
+        miniLandscape ? 21.0 : (dense ? 26.0 : (compact ? 38.0 : 48.0));
+    final width =
+        miniLandscape ? 48.0 : (dense ? 58.0 : (compact ? 64.0 : 82.0));
     final color = active ? AppColors.orange : AppColors.muted;
     final nodeIcon = complete ? Icons.check : icon;
 
@@ -560,12 +527,12 @@ class _StepNode extends StatelessWidget {
               ),
               boxShadow: active
                   ? const [
-                BoxShadow(
-                  color: Color(0x33FF5A00),
-                  blurRadius: 16,
-                  offset: Offset(0, 8),
-                ),
-              ]
+                      BoxShadow(
+                        color: Color(0x33FF5A00),
+                        blurRadius: 16,
+                        offset: Offset(0, 8),
+                      ),
+                    ]
                   : null,
             ),
             child: Icon(
@@ -631,16 +598,13 @@ class _DeviceStatusState extends State<_DeviceStatus> {
     super.initState();
     _now = DateTime.now();
 
-    _timer = Timer.periodic(
-      const Duration(seconds: 30),
-          (_) {
-        if (mounted) {
-          setState(() {
-            _now = DateTime.now();
-          });
-        }
-      },
-    );
+    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        setState(() {
+          _now = DateTime.now();
+        });
+      }
+    });
   }
 
   @override
@@ -658,13 +622,13 @@ class _DeviceStatusState extends State<_DeviceStatus> {
     final dense = MediaQuery.sizeOf(context).height <= 650;
 
     final iconSize =
-    miniLandscape ? 13.0 : (dense ? 16.0 : (widget.compact ? 18.0 : 24.0));
+        miniLandscape ? 13.0 : (dense ? 16.0 : (widget.compact ? 18.0 : 24.0));
 
     final timeSize =
-    miniLandscape ? 14.0 : (dense ? 17.0 : (widget.compact ? 19.0 : 25.0));
+        miniLandscape ? 14.0 : (dense ? 17.0 : (widget.compact ? 19.0 : 25.0));
 
     final dateSize =
-    miniLandscape ? 8.0 : (dense ? 9.5 : (widget.compact ? 10.5 : 13.0));
+        miniLandscape ? 8.0 : (dense ? 9.5 : (widget.compact ? 10.5 : 13.0));
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -676,11 +640,7 @@ class _DeviceStatusState extends State<_DeviceStatus> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.wifi,
-                color: Colors.black,
-                size: iconSize,
-              ),
+              Icon(Icons.wifi, color: Colors.black, size: iconSize),
               SizedBox(width: miniLandscape ? 5 : 8),
               Text(
                 time,
@@ -763,10 +723,7 @@ class _SecurityFooter extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
-              colors: [
-                AppColors.navy,
-                AppColors.navySoft,
-              ],
+              colors: [AppColors.navy, AppColors.navySoft],
             ),
           ),
           child: Wrap(
@@ -814,11 +771,7 @@ class _FooterItem extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: AppColors.white,
-            size: dense ? 18 : 36,
-          ),
+          Icon(icon, color: AppColors.white, size: dense ? 18 : 36),
           SizedBox(width: dense ? 10 : 16),
           Flexible(
             child: Column(

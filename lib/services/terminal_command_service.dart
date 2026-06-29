@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/bank_product.dart';
+
 /// Comandos aceitos pelo terminal/pinpad.
 ///
 /// Você pode enviar tanto em português quanto no formato SHOW_*. Exemplos:
@@ -18,6 +20,9 @@ import 'package:flutter/foundation.dart';
 /// erro, error, show_error
 /// docinho, doce, show_docinho
 /// led, leds, show_led
+/// seguro_pet, bolsa_protegida, assistencia_saude, protecao_cartao
+/// assistencia_residencial, seguro_celular
+/// led_red, led_green, led_blue, led_yellow, led_purple, led_white, led_off
 enum TerminalCommand {
   standby('standby'),
   cartao('cartao'),
@@ -29,20 +34,104 @@ enum TerminalCommand {
   sucesso('sucesso'),
   erro('erro'),
   docinho('docinho'),
-  led('led');
+  led('led'),
+  seguroPet('seguro_pet'),
+  seguroBolsaProtegida('seguro_bolsa_protegida'),
+  assistenciaSaude('assistencia_saude'),
+  protecaoCartao('protecao_cartao'),
+  assistenciaResidencial('assistencia_residencial'),
+  seguroCelular('seguro_celular'),
+  ledRed('led_red'),
+  ledGreen('led_green'),
+  ledBlue('led_blue'),
+  ledYellow('led_yellow'),
+  ledPurple('led_purple'),
+  ledWhite('led_white'),
+  ledOff('led_off'),
+  ledLoading('led_loading');
 
   const TerminalCommand(this.value);
 
   final String value;
 
+  BankProductKind? get productKind {
+    switch (this) {
+      case TerminalCommand.seguroPet:
+        return BankProductKind.pet;
+      case TerminalCommand.seguroBolsaProtegida:
+        return BankProductKind.protectedBag;
+      case TerminalCommand.assistenciaSaude:
+        return BankProductKind.health;
+      case TerminalCommand.protecaoCartao:
+        return BankProductKind.cardProtection;
+      case TerminalCommand.assistenciaResidencial:
+        return BankProductKind.homeAssistance;
+      case TerminalCommand.seguroCelular:
+        return BankProductKind.phoneInsurance;
+      case TerminalCommand.standby:
+      case TerminalCommand.cartao:
+      case TerminalCommand.senha:
+      case TerminalCommand.inserirCartao:
+      case TerminalCommand.biometria:
+      case TerminalCommand.biometriaDigital:
+      case TerminalCommand.aproximar:
+      case TerminalCommand.sucesso:
+      case TerminalCommand.erro:
+      case TerminalCommand.docinho:
+      case TerminalCommand.led:
+      case TerminalCommand.ledRed:
+      case TerminalCommand.ledGreen:
+      case TerminalCommand.ledBlue:
+      case TerminalCommand.ledYellow:
+      case TerminalCommand.ledPurple:
+      case TerminalCommand.ledWhite:
+      case TerminalCommand.ledOff:
+      case TerminalCommand.ledLoading:
+        return null;
+    }
+  }
+
+  String? get ledColor {
+    switch (this) {
+      case TerminalCommand.ledRed:
+        return 'red';
+      case TerminalCommand.ledGreen:
+        return 'green';
+      case TerminalCommand.ledBlue:
+        return 'blue';
+      case TerminalCommand.ledYellow:
+        return 'yellow';
+      case TerminalCommand.ledPurple:
+        return 'purple';
+      case TerminalCommand.ledWhite:
+        return 'white';
+      case TerminalCommand.standby:
+      case TerminalCommand.cartao:
+      case TerminalCommand.senha:
+      case TerminalCommand.inserirCartao:
+      case TerminalCommand.biometria:
+      case TerminalCommand.biometriaDigital:
+      case TerminalCommand.aproximar:
+      case TerminalCommand.sucesso:
+      case TerminalCommand.erro:
+      case TerminalCommand.docinho:
+      case TerminalCommand.led:
+      case TerminalCommand.seguroPet:
+      case TerminalCommand.seguroBolsaProtegida:
+      case TerminalCommand.assistenciaSaude:
+      case TerminalCommand.protecaoCartao:
+      case TerminalCommand.assistenciaResidencial:
+      case TerminalCommand.seguroCelular:
+      case TerminalCommand.ledOff:
+      case TerminalCommand.ledLoading:
+        return null;
+    }
+  }
+
   static TerminalCommand? parse(String? raw) {
     if (raw == null) return null;
 
-    final normalized = raw
-        .trim()
-        .toLowerCase()
-        .replaceAll('-', '_')
-        .replaceAll(' ', '_');
+    final normalized = _normalize(raw);
 
     switch (normalized) {
       case 'standby':
@@ -54,13 +143,10 @@ enum TerminalCommand {
         return TerminalCommand.standby;
 
       case 'cartao':
-      case 'cartão':
       case 'card':
       case 'passar_cartao':
-      case 'passar_cartão':
       case 'show_card':
       case 'show_cartao':
-      case 'show_cartão':
         return TerminalCommand.cartao;
 
       case 'senha':
@@ -71,12 +157,10 @@ enum TerminalCommand {
         return TerminalCommand.senha;
 
       case 'inserir_cartao':
-      case 'inserir_cartão':
       case 'insert_card':
       case 'chip':
       case 'show_insert_card':
       case 'show_inserir_cartao':
-      case 'show_inserir_cartão':
         return TerminalCommand.inserirCartao;
 
       case 'biometria':
@@ -102,7 +186,6 @@ enum TerminalCommand {
       case 'contactless':
       case 'celular':
       case 'aproximar_cartao':
-      case 'aproximar_cartão':
       case 'show_aproximar':
       case 'show_nfc':
       case 'show_contactless':
@@ -137,6 +220,115 @@ enum TerminalCommand {
       case 'show_led':
       case 'show_leds':
         return TerminalCommand.led;
+
+      case 'seguro_pet':
+      case 'pet':
+      case 'jornada_seguro_pet':
+      case 'contratar_seguro_pet':
+      case 'show_seguro_pet':
+      case 'show_pet':
+        return TerminalCommand.seguroPet;
+
+      case 'seguro_bolsa_protegida':
+      case 'bolsa_protegida':
+      case 'bolsa':
+      case 'jornada_bolsa_protegida':
+      case 'contratar_bolsa_protegida':
+      case 'show_bolsa_protegida':
+      case 'show_seguro_bolsa':
+        return TerminalCommand.seguroBolsaProtegida;
+
+      case 'plano_saude':
+      case 'plano_de_saude':
+      case 'assistencia_saude':
+      case 'saude':
+      case 'jornada_saude':
+      case 'contratar_saude':
+      case 'show_saude':
+      case 'show_assistencia_saude':
+        return TerminalCommand.assistenciaSaude;
+
+      case 'protecao_cartao':
+      case 'proteger_cartao':
+      case 'seguro_cartao':
+      case 'cartao_protegido':
+      case 'jornada_protecao_cartao':
+      case 'contratar_protecao_cartao':
+      case 'show_protecao_cartao':
+        return TerminalCommand.protecaoCartao;
+
+      case 'assistencia_residencial':
+      case 'residencial':
+      case 'casa':
+      case 'lar':
+      case 'jornada_assistencia_residencial':
+      case 'contratar_assistencia_residencial':
+      case 'show_assistencia_residencial':
+        return TerminalCommand.assistenciaResidencial;
+
+      case 'seguro_celular':
+      case 'celular_seguro':
+      case 'jornada_seguro_celular':
+      case 'contratar_seguro_celular':
+      case 'show_seguro_celular':
+        return TerminalCommand.seguroCelular;
+
+      case 'led_red':
+      case 'led_vermelho':
+      case 'teste_led_red':
+      case 'teste_led_vermelho':
+      case 'test_led_red':
+        return TerminalCommand.ledRed;
+
+      case 'led_green':
+      case 'led_verde':
+      case 'teste_led_green':
+      case 'teste_led_verde':
+      case 'test_led_green':
+        return TerminalCommand.ledGreen;
+
+      case 'led_blue':
+      case 'led_azul':
+      case 'teste_led_blue':
+      case 'teste_led_azul':
+      case 'test_led_blue':
+        return TerminalCommand.ledBlue;
+
+      case 'led_yellow':
+      case 'led_amarelo':
+      case 'teste_led_yellow':
+      case 'teste_led_amarelo':
+      case 'test_led_yellow':
+        return TerminalCommand.ledYellow;
+
+      case 'led_purple':
+      case 'led_roxo':
+      case 'led_violeta':
+      case 'teste_led_purple':
+      case 'teste_led_roxo':
+      case 'test_led_purple':
+        return TerminalCommand.ledPurple;
+
+      case 'led_white':
+      case 'led_branco':
+      case 'teste_led_white':
+      case 'teste_led_branco':
+      case 'test_led_white':
+        return TerminalCommand.ledWhite;
+
+      case 'led_off':
+      case 'led_desligar':
+      case 'led_desligado':
+      case 'desligar_led':
+      case 'desligar_leds':
+        return TerminalCommand.ledOff;
+
+      case 'led_loading':
+      case 'led_carregando':
+      case 'led_animacao':
+      case 'led_animacao_carregamento':
+      case 'teste_led_loading':
+        return TerminalCommand.ledLoading;
     }
 
     for (final command in values) {
@@ -144,6 +336,26 @@ enum TerminalCommand {
     }
 
     return null;
+  }
+
+  static String _normalize(String raw) {
+    return raw
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[-\s]+'), '_')
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('ç', 'c');
   }
 }
 
@@ -255,11 +467,13 @@ class TerminalCommandService {
       request.response
         ..statusCode = HttpStatus.badRequest
         ..headers.contentType = ContentType.json
-        ..write(jsonEncode({
-          'ok': false,
-          'message': 'Comando inválido.',
-          'validCommands': _validCommands,
-        }));
+        ..write(
+          jsonEncode({
+            'ok': false,
+            'message': 'Comando inválido.',
+            'validCommands': _validCommands,
+          }),
+        );
       await request.response.close();
       return;
     }
@@ -269,11 +483,9 @@ class TerminalCommandService {
     request.response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = ContentType.json
-      ..write(jsonEncode({
-        'ok': true,
-        'source': 'http',
-        'command': command.value,
-      }));
+      ..write(
+        jsonEncode({'ok': true, 'source': 'http', 'command': command.value}),
+      );
 
     await request.response.close();
   }
@@ -282,7 +494,18 @@ class TerminalCommandService {
     final segments = request.uri.pathSegments;
 
     if (segments.length >= 2 && segments.first == 'command') {
-      return segments[1];
+      return segments.skip(1).join('_');
+    }
+
+    if (segments.isNotEmpty && segments.first == 'produto') {
+      return segments.length >= 2 ? segments.skip(1).join('_') : null;
+    }
+
+    if (segments.isNotEmpty && segments.first == 'led') {
+      final ledCommand = segments.length >= 2
+          ? segments[1]
+          : request.uri.queryParameters['color'];
+      return ledCommand == null ? null : 'led_$ledCommand';
     }
 
     final queryCommand = request.uri.queryParameters['command'];
@@ -309,9 +532,7 @@ class TerminalCommandService {
     final command = TerminalCommand.parse(raw);
 
     if (command == null) {
-      debugPrint(
-        'Comando "$raw" ignorado. Use: ${_validCommands.join(', ')}',
-      );
+      debugPrint('Comando "$raw" ignorado. Use: ${_validCommands.join(', ')}');
       return false;
     }
 
@@ -345,6 +566,12 @@ class TerminalCommandService {
         'SHOW_ERROR',
         'SHOW_DOCINHO',
         'SHOW_LED',
+        'SHOW_SEGURO_PET',
+        'SHOW_BOLSA_PROTEGIDA',
+        'SHOW_SAUDE',
+        'SHOW_PROTECAO_CARTAO',
+        'SHOW_ASSISTENCIA_RESIDENCIAL',
+        'SHOW_SEGURO_CELULAR',
         'standby',
         'cartao',
         'senha',
@@ -359,5 +586,19 @@ class TerminalCommandService {
         'docinho',
         'led',
         'leds',
+        'seguro_pet',
+        'bolsa_protegida',
+        'assistencia_saude',
+        'protecao_cartao',
+        'assistencia_residencial',
+        'seguro_celular',
+        'led_red',
+        'led_green',
+        'led_blue',
+        'led_yellow',
+        'led_purple',
+        'led_white',
+        'led_off',
+        'led_loading',
       ];
 }

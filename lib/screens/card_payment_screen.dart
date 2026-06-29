@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -21,6 +21,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(CardReaderService.instance.setStatusLed('blue'));
     _cardSubscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.icInserted ||
           event.type == CardReaderEventType.magSwiped ||
@@ -41,13 +42,21 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   Future<void> _goToPassword() async {
     if (!mounted || _goingToPassword) return;
     _goingToPassword = true;
+    final session = _journeySession;
 
     await CardReaderService.instance.stopDetection();
     await CardReaderService.instance.playFixedLedLoading();
     await Future<void>.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/senha', (_) => false);
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/senha', (_) => false, arguments: session);
+  }
+
+  ProductJourneySession? get _journeySession {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    return arguments is ProductJourneySession ? arguments : null;
   }
 
   @override
@@ -64,7 +73,8 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                 title: 'Passe\no cartão',
                 messageSpans: [
                   TextSpan(
-                    text: 'Aproxime, insira ou passe o cartão\nna leitora com a ',
+                    text:
+                        'Aproxime, insira ou passe o cartão\nna leitora com a ',
                   ),
                   TextSpan(
                     text: 'tarja voltada para baixo.',
@@ -181,10 +191,7 @@ class _SwipeCardAnimationState extends State<_SwipeCardAnimation>
 }
 
 class _AnimatedChevron extends StatelessWidget {
-  const _AnimatedChevron({
-    required this.delay,
-    required this.progress,
-  });
+  const _AnimatedChevron({required this.delay, required this.progress});
 
   final double delay;
   final double progress;
@@ -219,7 +226,7 @@ class _ReaderSlot extends StatelessWidget {
         color: AppColors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.orange.withOpacity(0.35),
+          color: AppColors.orange.withValues(alpha: 0.35),
           width: 1.2,
         ),
         boxShadow: const [
@@ -235,10 +242,7 @@ class _ReaderSlot extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF2B1307),
-              Colors.black,
-            ],
+            colors: [Color(0xFF2B1307), Colors.black],
           ),
           borderRadius: BorderRadius.circular(7),
           boxShadow: const [
@@ -266,17 +270,10 @@ class _OrangeCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF7A00),
-            Color(0xFFFF6200),
-            AppColors.orangeDark,
-          ],
+          colors: [Color(0xFFFF7A00), Color(0xFFFF6200), AppColors.orangeDark],
         ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: Color(0xFFFFC39A),
-          width: 1.1,
-        ),
+        border: Border.all(color: Color(0xFFFFC39A), width: 1.1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x3A000000),
@@ -287,11 +284,7 @@ class _OrangeCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _CardPatternPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _CardPatternPainter())),
           const Positioned(
             left: 42,
             top: 34,
@@ -305,11 +298,7 @@ class _OrangeCard extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
-            left: 44,
-            top: 118,
-            child: _Chip(),
-          ),
+          const Positioned(left: 44, top: 118, child: _Chip()),
           const Positioned(
             right: 36,
             bottom: 28,
@@ -342,21 +331,12 @@ class _Chip extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFFE49A),
-            Color(0xFFD5A83E),
-            Color(0xFFB88725),
-          ],
+          colors: [Color(0xFFFFE49A), Color(0xFFD5A83E), Color(0xFFB88725)],
         ),
         borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: Color(0xFF7A5A1F),
-          width: 1,
-        ),
+        border: Border.all(color: Color(0xFF7A5A1F), width: 1),
       ),
-      child: CustomPaint(
-        painter: _ChipLinesPainter(),
-      ),
+      child: CustomPaint(painter: _ChipLinesPainter()),
     );
   }
 }
@@ -364,9 +344,9 @@ class _Chip extends StatelessWidget {
 class _CardPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final circlePaint = Paint()..color = Colors.white.withOpacity(0.075);
+    final circlePaint = Paint()..color = Colors.white.withValues(alpha: 0.075);
     final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.055)
+      ..color = Colors.white.withValues(alpha: 0.055)
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
@@ -402,7 +382,7 @@ class _ChipLinesPainter extends CustomPainter {
       ..strokeWidth = 1.1;
 
     final softPaint = Paint()
-      ..color = const Color(0xFF74521D).withOpacity(0.45)
+      ..color = const Color(0xFF74521D).withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
 

@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -55,12 +56,16 @@ class _FaceScanner extends StatefulWidget {
 
 class _FaceScannerState extends State<_FaceScanner>
     with SingleTickerProviderStateMixin {
-  static const MethodChannel _permissionChannel =
-      MethodChannel('pinpad_terminal/permissions');
+  static const MethodChannel _permissionChannel = MethodChannel(
+    'pinpad_terminal/permissions',
+  );
   late final AnimationController _scanController;
   CameraController? _cameraController;
   Future<void>? _cameraInit;
   String? _cameraError;
+  Timer? _autoAdvanceTimer;
+  ProductJourneySession? _journeySession;
+  bool _autoAdvanceConfigured = false;
 
   @override
   void initState() {
@@ -69,8 +74,34 @@ class _FaceScannerState extends State<_FaceScanner>
       vsync: this,
       duration: const Duration(milliseconds: 2100),
     )..repeat();
+    unawaited(CardReaderService.instance.setStatusLed('purple'));
     unawaited(CardReaderService.instance.startFaceLedBlink());
     _cameraInit = _startCamera();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_autoAdvanceConfigured) return;
+
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is! ProductJourneySession) return;
+
+    _journeySession = arguments;
+    _autoAdvanceConfigured = true;
+    _autoAdvanceTimer = Timer(
+      const Duration(milliseconds: 4500),
+      _finishProductJourney,
+    );
+  }
+
+  void _finishProductJourney() {
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/sucesso',
+      (_) => false,
+      arguments: _journeySession,
+    );
   }
 
   Future<void> _startCamera() async {
@@ -94,7 +125,9 @@ class _FaceScannerState extends State<_FaceScanner>
       final camera = cameras.firstWhere(
         (item) => item.lensDirection == CameraLensDirection.external,
         orElse: () => cameras.firstWhere(
-          (item) => item.name.toLowerCase().contains('usb') || item.name.toLowerCase().contains('external'),
+          (item) =>
+              item.name.toLowerCase().contains('usb') ||
+              item.name.toLowerCase().contains('external'),
           orElse: () => cameras.firstWhere(
             (item) => item.lensDirection == CameraLensDirection.front,
             orElse: () => cameras.first,
@@ -120,6 +153,7 @@ class _FaceScannerState extends State<_FaceScanner>
 
   @override
   void dispose() {
+    _autoAdvanceTimer?.cancel();
     unawaited(CardReaderService.instance.stopFaceLedBlink());
     _scanController.dispose();
     unawaited(_cameraController?.dispose());
@@ -136,8 +170,9 @@ class _FaceScannerState extends State<_FaceScanner>
           final miniLandscape =
               mediaHeight <= 460 || constraints.maxHeight <= 350;
           final dense = mediaHeight <= 650 || constraints.maxHeight <= 440;
-          final availableHeight =
-              constraints.maxHeight.isFinite ? constraints.maxHeight : mediaHeight;
+          final availableHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : mediaHeight;
 
           final scannerSize = miniLandscape
               ? (availableHeight * 0.66).clamp(150.0, 205.0).toDouble()
@@ -228,7 +263,11 @@ class _FaceScannerState extends State<_FaceScanner>
                             ),
                           ),
                         ),
-                        _CornerSet(scannerSize: scannerSize, dense: dense, mini: miniLandscape),
+                        _CornerSet(
+                          scannerSize: scannerSize,
+                          dense: dense,
+                          mini: miniLandscape,
+                        ),
                       ],
                     );
                   },
@@ -241,7 +280,6 @@ class _FaceScannerState extends State<_FaceScanner>
                     : 'Câmera indisponível • verifique a permissão',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-
                   fontSize: miniLandscape ? 11 : (dense ? 13 : 16),
                   fontWeight: FontWeight.w700,
                 ),
@@ -301,7 +339,11 @@ class _CameraPreviewOrFallback extends StatelessWidget {
 }
 
 class _CornerSet extends StatelessWidget {
-  const _CornerSet({required this.scannerSize, required this.dense, required this.mini});
+  const _CornerSet({
+    required this.scannerSize,
+    required this.dense,
+    required this.mini,
+  });
 
   final double scannerSize;
   final bool dense;
@@ -313,10 +355,26 @@ class _CornerSet extends StatelessWidget {
     final pos = scannerSize * 0.18;
     return Stack(
       children: [
-        Positioned(left: pos, top: pos, child: _FrameCorner(size: size)),
-        Positioned(right: pos, top: pos, child: RotatedBox(quarterTurns: 1, child: _FrameCorner(size: size))),
-        Positioned(right: pos, bottom: pos, child: RotatedBox(quarterTurns: 2, child: _FrameCorner(size: size))),
-        Positioned(left: pos, bottom: pos, child: RotatedBox(quarterTurns: 3, child: _FrameCorner(size: size))),
+        Positioned(
+          left: pos,
+          top: pos,
+          child: _FrameCorner(size: size),
+        ),
+        Positioned(
+          right: pos,
+          top: pos,
+          child: RotatedBox(quarterTurns: 1, child: _FrameCorner(size: size)),
+        ),
+        Positioned(
+          right: pos,
+          bottom: pos,
+          child: RotatedBox(quarterTurns: 2, child: _FrameCorner(size: size)),
+        ),
+        Positioned(
+          left: pos,
+          bottom: pos,
+          child: RotatedBox(quarterTurns: 3, child: _FrameCorner(size: size)),
+        ),
       ],
     );
   }
@@ -367,7 +425,7 @@ class _ScannerRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.shortestSide / 2;
     final base = Paint()
-      ..color = AppColors.orange.withOpacity(0.16)
+      ..color = AppColors.orange.withValues(alpha: 0.16)
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke;
     final active = Paint()
@@ -401,7 +459,11 @@ class _FacePainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
     final fill = Paint()..color = const Color(0xFFD5DAE2);
 
-    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.40), size.width * 0.18, fill);
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.40),
+      size.width * 0.18,
+      fill,
+    );
     canvas.drawArc(
       Rect.fromCenter(
         center: Offset(size.width * 0.5, size.height * 0.76),

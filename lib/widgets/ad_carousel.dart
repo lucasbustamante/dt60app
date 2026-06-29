@@ -103,11 +103,7 @@ class _AdCarouselState extends State<AdCarousel> {
       icon: Icons.credit_card_outlined,
       primary: AppColors.navy,
       secondary: Color(0xFF14395F),
-      features: [
-        'Senha protegida',
-        'Avisos em tempo real',
-        'Limite ajustável',
-      ],
+      features: ['Senha protegida', 'Avisos em tempo real', 'Limite ajustável'],
     ),
   ];
 
@@ -142,13 +138,10 @@ class _AdCarouselState extends State<AdCarousel> {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 620;
         final maxHeight =
-        constraints.maxHeight.isFinite ? constraints.maxHeight : 430.0;
+            constraints.maxHeight.isFinite ? constraints.maxHeight : 430.0;
 
         final height = maxHeight
-            .clamp(
-          compact ? 255.0 : 270.0,
-          compact ? 390.0 : 405.0,
-        )
+            .clamp(compact ? 255.0 : 270.0, compact ? 390.0 : 405.0)
             .toDouble();
 
         return SizedBox(
@@ -249,11 +242,7 @@ class _OrangeFeatureCard extends StatelessWidget {
           Positioned(
             right: -4,
             bottom: -4,
-            child: _ShieldProductIcon(
-              icon: ad.icon,
-              size: 96,
-              compact: true,
-            ),
+            child: _ShieldProductIcon(icon: ad.icon, size: 96, compact: true),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,7 +379,7 @@ class _HealthCard extends StatelessWidget {
               width: 96,
               height: 96,
               decoration: BoxDecoration(
-                color: ad.secondary.withOpacity(0.14),
+                color: ad.secondary.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
             ),
@@ -614,9 +603,9 @@ class _SimpleBenefit extends StatelessWidget {
       height: 27,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.09),
+        color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
         children: [
@@ -658,9 +647,9 @@ class _CardBenefit extends StatelessWidget {
       height: 30,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(0.13),
+        color: AppColors.white.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.white.withOpacity(0.22)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.22)),
       ),
       child: Row(
         children: [
@@ -712,11 +701,7 @@ class _MiniCreditCard extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.credit_card_outlined,
-            color: AppColors.white,
-            size: 15,
-          ),
+          Icon(Icons.credit_card_outlined, color: AppColors.white, size: 15),
           Spacer(),
           Row(
             children: [
@@ -742,7 +727,7 @@ class _CardLine extends StatelessWidget {
       width: width,
       height: 3,
       decoration: BoxDecoration(
-        color: AppColors.white.withOpacity(0.75),
+        color: AppColors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(8),
       ),
     );
@@ -750,10 +735,7 @@ class _CardLine extends StatelessWidget {
 }
 
 class _SmallSolidButton extends StatelessWidget {
-  const _SmallSolidButton({
-    required this.label,
-    required this.color,
-  });
+  const _SmallSolidButton({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -791,11 +773,7 @@ BoxDecoration _cardDecoration({Color? color, Gradient? gradient}) {
     borderRadius: BorderRadius.circular(14),
     border: Border.all(color: const Color(0x16000000)),
     boxShadow: const [
-      BoxShadow(
-        color: Color(0x22000000),
-        blurRadius: 14,
-        offset: Offset(0, 8),
-      ),
+      BoxShadow(color: Color(0x22000000), blurRadius: 14, offset: Offset(0, 8)),
     ],
   );
 }
@@ -824,16 +802,17 @@ class _ShieldProductIcon extends StatelessWidget {
         children: [
           Icon(
             Icons.shield_outlined,
-            color: AppColors.white.withOpacity(0.88),
+            color: AppColors.white.withValues(alpha: 0.88),
             size: size,
           ),
           Container(
             width: innerSize,
             height: innerSize,
             decoration: BoxDecoration(
-              color: AppColors.white.withOpacity(0.17),
+              color: AppColors.white.withValues(alpha: 0.17),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.white.withOpacity(0.50)),
+              border:
+                  Border.all(color: AppColors.white.withValues(alpha: 0.50)),
             ),
             child: Icon(icon, color: AppColors.white, size: iconSize),
           ),

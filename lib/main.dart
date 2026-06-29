@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'models/bank_product.dart';
 import 'screens/card_payment_screen.dart';
 import 'screens/docinho_screen.dart';
 import 'screens/error_screen.dart';
@@ -12,8 +13,10 @@ import 'screens/contactless_card_screen.dart';
 import 'screens/insert_card_screen.dart';
 import 'screens/led_test_screen.dart';
 import 'screens/password_screen.dart';
+import 'screens/product_offer_screen.dart';
 import 'screens/standby_screen.dart';
 import 'screens/success_screen.dart';
+import 'services/card_reader_service.dart';
 import 'services/terminal_command_service.dart';
 import 'theme/app_theme.dart';
 
@@ -24,13 +27,15 @@ Future<void> main() async {
     DeviceOrientation.landscapeRight,
   ]);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarDividerColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
   runApp(const PinpadTerminalApp());
 }
 
@@ -46,6 +51,7 @@ class AppRoutes {
   static const error = '/erro';
   static const docinho = '/docinho';
   static const led = '/led';
+  static const productOffer = '/oferta-produto';
 }
 
 class PinpadTerminalApp extends StatefulWidget {
@@ -73,6 +79,37 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
   }
 
   void _handleCommand(TerminalCommand command) {
+    final ledColor = command.ledColor;
+    if (ledColor != null) {
+      unawaited(CardReaderService.instance.setStatusLed(ledColor));
+      return;
+    }
+
+    if (command == TerminalCommand.ledOff) {
+      unawaited(CardReaderService.instance.ledOff());
+      return;
+    }
+
+    if (command == TerminalCommand.ledLoading) {
+      unawaited(CardReaderService.instance.playFixedLedLoading());
+      return;
+    }
+
+    final productKind = command.productKind;
+    if (productKind != null) {
+      final product = BankProductCatalog.byKind(productKind);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) return;
+        navigator.pushNamedAndRemoveUntil(
+          AppRoutes.productOffer,
+          (_) => false,
+          arguments: product,
+        );
+      });
+      return;
+    }
+
     final route = _routeFor(command);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -106,6 +143,21 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
         return AppRoutes.docinho;
       case TerminalCommand.led:
         return AppRoutes.led;
+      case TerminalCommand.seguroPet:
+      case TerminalCommand.seguroBolsaProtegida:
+      case TerminalCommand.assistenciaSaude:
+      case TerminalCommand.protecaoCartao:
+      case TerminalCommand.assistenciaResidencial:
+      case TerminalCommand.seguroCelular:
+      case TerminalCommand.ledRed:
+      case TerminalCommand.ledGreen:
+      case TerminalCommand.ledBlue:
+      case TerminalCommand.ledYellow:
+      case TerminalCommand.ledPurple:
+      case TerminalCommand.ledWhite:
+      case TerminalCommand.ledOff:
+      case TerminalCommand.ledLoading:
+        return AppRoutes.standby;
     }
   }
 
@@ -129,6 +181,20 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
         AppRoutes.error: (_) => const ErrorScreen(),
         AppRoutes.docinho: (_) => const DocinhoScreen(),
         AppRoutes.led: (_) => const LedTestScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == AppRoutes.productOffer) {
+          final product = settings.arguments;
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => ProductOfferScreen(
+              product: product is BankProduct
+                  ? product
+                  : BankProductCatalog.byKind(BankProductKind.pet),
+            ),
+          );
+        }
+        return null;
       },
     );
   }

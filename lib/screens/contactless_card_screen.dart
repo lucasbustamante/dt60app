@@ -21,6 +21,7 @@ class _ContactlessCardScreenState extends State<ContactlessCardScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(CardReaderService.instance.setStatusLed('blue'));
     _cardSubscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.nfcApproached ||
           event.type == CardReaderEventType.icInserted ||
@@ -131,7 +132,9 @@ class _ContactlessAnimationState extends State<_ContactlessAnimation>
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  final value = Curves.easeInOutCubic.transform(_controller.value);
+                  final value = Curves.easeInOutCubic.transform(
+                    _controller.value,
+                  );
 
                   return Stack(
                     alignment: Alignment.center,
@@ -261,7 +264,7 @@ class _WavesPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 7
-      ..color = AppColors.orange.withOpacity(.32 + progress * .45);
+      ..color = AppColors.orange.withValues(alpha: .32 + progress * .45);
 
     final center = Offset(size.width / 2, size.height / 2);
     for (var i = 0; i < 4; i++) {
@@ -271,7 +274,10 @@ class _WavesPainter extends CustomPainter {
         -math.pi / 3,
         math.pi * 2 / 3,
         false,
-        paint..color = AppColors.orange.withOpacity((.62 - i * .11).clamp(0, 1)),
+        paint
+          ..color = AppColors.orange.withValues(
+            alpha: (.62 - i * .11).clamp(0.0, 1.0).toDouble(),
+          ),
       );
     }
   }

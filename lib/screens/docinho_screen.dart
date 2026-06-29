@@ -125,12 +125,12 @@ class _PhotoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.82),
+        color: Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(34),
         border: Border.all(color: Colors.white, width: 5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7A3B16).withOpacity(0.24),
+            color: const Color(0xFF7A3B16).withValues(alpha: 0.24),
             blurRadius: 30,
             offset: const Offset(0, 18),
           ),
@@ -144,6 +144,7 @@ class _PhotoCard extends StatelessWidget {
             Image.asset(
               'assets/images/docinho.png',
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const _DocinhoFallback(),
             ),
             Positioned.fill(
               child: DecoratedBox(
@@ -153,7 +154,7 @@ class _PhotoCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.10),
+                      Colors.black.withValues(alpha: 0.10),
                     ],
                   ),
                 ),
@@ -169,7 +170,7 @@ class _PhotoCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.86),
+                  color: Colors.white.withValues(alpha: 0.86),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Text(
@@ -184,6 +185,34 @@ class _PhotoCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocinhoFallback extends StatelessWidget {
+  const _DocinhoFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFD77A),
+            Color(0xFFFF8DB8),
+            Color(0xFF8FE8D3),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.cake_outlined,
+          color: Colors.white,
+          size: 120,
         ),
       ),
     );
@@ -207,12 +236,12 @@ class _MessagePanel extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.78),
+              color: Colors.white.withValues(alpha: 0.78),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(color: Colors.white, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFD47A48).withOpacity(0.20),
+                  color: const Color(0xFFD47A48).withValues(alpha: 0.20),
                   blurRadius: 24,
                   offset: const Offset(0, 14),
                 ),
@@ -282,7 +311,7 @@ class _SweetChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.70),
+        color: Colors.white.withValues(alpha: 0.70),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: Colors.white, width: 2),
       ),
@@ -329,15 +358,15 @@ class _CandyBackgroundPainter extends CustomPainter {
         (item.y * size.height) + (wave * 10),
       );
 
-      dotPaint.color = item.color.withOpacity(0.36);
+      dotPaint.color = item.color.withValues(alpha: 0.36);
       canvas.drawCircle(center, item.radius, dotPaint);
 
-      ringPaint.color = item.color.withOpacity(0.42);
+      ringPaint.color = item.color.withValues(alpha: 0.42);
       canvas.drawCircle(center, item.radius + 7 + (wave.abs() * 4), ringPaint);
     }
 
     final stripePaint = Paint()
-      ..color = Colors.white.withOpacity(0.20)
+      ..color = Colors.white.withValues(alpha: 0.20)
       ..strokeWidth = 18
       ..strokeCap = StrokeCap.round;
 

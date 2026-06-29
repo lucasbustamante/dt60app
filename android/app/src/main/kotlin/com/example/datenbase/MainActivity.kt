@@ -500,25 +500,28 @@ class MainActivity : FlutterActivity() {
             return
         }
         mainHandler.post(object : Runnable {
-            var on = false
+            var white = false
             override fun run() {
                 if (!faceLedBlinking.get()) {
-                    try { clearFixedLeds(deviceLed) } catch (_: Throwable) {}
+                    try { clearAllLeds(deviceLed) } catch (_: Throwable) {}
                     return
                 }
                 try {
-                    clearFixedLeds(deviceLed)
-                    if (on) applyFixedLed(deviceLed, "blue")
-                    on = !on
+                    clearAllLeds(deviceLed)
+                    val color = if (white) "white" else "purple"
+                    val effect = if (white) "solid" else "breath"
+                    applyTopRgbLed(deviceLed, color, effect)
+                    applyFingerRgbLed(deviceLed, color, "solid")
+                    white = !white
                 } catch (_: Throwable) {}
-                mainHandler.postDelayed(this, 420L)
+                mainHandler.postDelayed(this, 700L)
             }
         })
     }
 
     private fun stopFaceLedBlink() {
         faceLedBlinking.set(false)
-        try { led?.let { clearFixedLeds(it) } } catch (_: Throwable) {}
+        try { led?.let { clearAllLeds(it) } } catch (_: Throwable) {}
     }
 
     private fun rgbConfig(color: String): LedConfig {

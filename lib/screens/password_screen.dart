@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../models/bank_product.dart';
+import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
@@ -22,6 +24,7 @@ class _PasswordScreenState extends State<PasswordScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(CardReaderService.instance.setStatusLed('yellow'));
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFocus());
     _focusTimer = Timer.periodic(
@@ -64,14 +67,28 @@ class _PasswordScreenState extends State<PasswordScreen> {
     if (_pin.length != 4 || _leaving) return;
     _leaving = true;
     _focusTimer?.cancel();
-    Navigator.of(context).pushNamedAndRemoveUntil('/sucesso', (_) => false);
+    final session = _journeySession;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      session == null ? '/sucesso' : '/biometria',
+      (_) => false,
+      arguments: session,
+    );
   }
 
   void _cancel() {
     if (_leaving) return;
     _leaving = true;
     _focusTimer?.cancel();
-    Navigator.of(context).pushNamedAndRemoveUntil('/erro', (_) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/erro',
+      (_) => false,
+      arguments: _journeySession,
+    );
+  }
+
+  ProductJourneySession? get _journeySession {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    return arguments is ProductJourneySession ? arguments : null;
   }
 
   void _handleKey(KeyEvent event) {
@@ -377,48 +394,49 @@ class _ActionButton extends StatelessWidget {
       height: height,
       child: filled
           ? ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: iconSize),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: disabled ? AppColors.line : color,
-          foregroundColor: AppColors.white,
-          disabledBackgroundColor: AppColors.line,
-          disabledForegroundColor: AppColors.muted,
-          elevation: disabled ? 0 : 2,
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          textStyle: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0,
-          ),
-        ),
-      )
+              onPressed: onPressed,
+              icon: Icon(icon, size: iconSize),
+              label: Text(label),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: disabled ? AppColors.line : color,
+                foregroundColor: AppColors.white,
+                disabledBackgroundColor: AppColors.line,
+                disabledForegroundColor: AppColors.muted,
+                elevation: disabled ? 0 : 2,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                textStyle: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            )
           : OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: iconSize),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: disabled ? AppColors.muted : color,
-          disabledForegroundColor: AppColors.muted,
-          side: BorderSide(
-            color: disabled ? AppColors.line : color.withOpacity(0.75),
-            width: 1.2,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          textStyle: TextStyle(
-            fontSize: fontSize,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0,
-          ),
-        ),
-      ),
+              onPressed: onPressed,
+              icon: Icon(icon, size: iconSize),
+              label: Text(label),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: disabled ? AppColors.muted : color,
+                disabledForegroundColor: AppColors.muted,
+                side: BorderSide(
+                  color:
+                      disabled ? AppColors.line : color.withValues(alpha: 0.75),
+                  width: 1.2,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                textStyle: TextStyle(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
     );
   }
 }
@@ -487,25 +505,25 @@ class _PinBox extends StatelessWidget {
       child: Center(
         child: filled
             ? Container(
-          width: size * 0.23,
-          height: size * 0.23,
-          decoration: const BoxDecoration(
-            color: AppColors.text,
-            shape: BoxShape.circle,
-          ),
-        )
+                width: size * 0.23,
+                height: size * 0.23,
+                decoration: const BoxDecoration(
+                  color: AppColors.text,
+                  shape: BoxShape.circle,
+                ),
+              )
             : AnimatedOpacity(
-          duration: const Duration(milliseconds: 240),
-          opacity: active ? 1 : 0,
-          child: Container(
-            width: 2,
-            height: size * 0.48,
-            decoration: BoxDecoration(
-              color: AppColors.orange,
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
+                duration: const Duration(milliseconds: 240),
+                opacity: active ? 1 : 0,
+                child: Container(
+                  width: 2,
+                  height: size * 0.48,
+                  decoration: BoxDecoration(
+                    color: AppColors.orange,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
       ),
     );
   }
