@@ -1,0 +1,82 @@
+COMANDOS DO PINPAD FLUTTER
+==========================
+
+O app foi preparado para receber comandos de duas formas:
+
+1) TCP na porta 5050
+2) HTTP na porta 8787
+
+COMANDOS ACEITOS
+----------------
+SHOW_CAROUSEL      volta para o carrossel / standby
+SHOW_CARD          tela de passar cartão
+SHOW_PASSWORD      tela de senha
+SHOW_INSERT_CARD   tela de inserir cartão/chip
+SHOW_FACE          tela de biometria facial
+SHOW_SUCCESS       tela de sucesso
+SHOW_ERROR         tela de erro
+
+Também aceita os nomes em português:
+standby, cartao, senha, inserir_cartao, biometria, sucesso, erro
+
+IMPORTANTE NO ANDROID
+---------------------
+No arquivo android/app/src/main/AndroidManifest.xml, coloque esta permissão acima da tag <application>:
+
+<uses-permission android:name="android.permission.INTERNET" />
+
+Se o seu projeto não tiver a pasta android, rode antes:
+flutter create .
+
+COMO TESTAR PELO USB/ADB NO WINDOWS
+-----------------------------------
+1. Abra o app no tablet/emulador.
+2. No PowerShell, veja se o Android aparece:
+
+adb devices
+
+3. Faça o encaminhamento da porta TCP:
+
+adb forward tcp:5050 tcp:5050
+
+4. Faça o encaminhamento da porta HTTP:
+
+adb forward tcp:8787 tcp:8787
+
+5. Envie comandos por HTTP, que funciona fácil no PowerShell:
+
+Invoke-RestMethod http://127.0.0.1:8787/command/cartao
+Invoke-RestMethod http://127.0.0.1:8787/command/senha
+Invoke-RestMethod http://127.0.0.1:8787/command/inserir_cartao
+Invoke-RestMethod http://127.0.0.1:8787/command/biometria
+Invoke-RestMethod http://127.0.0.1:8787/command/sucesso
+Invoke-RestMethod http://127.0.0.1:8787/command/erro
+Invoke-RestMethod http://127.0.0.1:8787/command/standby
+
+COMO ENVIAR TCP PELO WINDOWS
+----------------------------
+Se você tiver o ncat instalado:
+
+echo SHOW_CARD | ncat 127.0.0.1 5050
+echo SHOW_PASSWORD | ncat 127.0.0.1 5050
+echo SHOW_INSERT_CARD | ncat 127.0.0.1 5050
+echo SHOW_FACE | ncat 127.0.0.1 5050
+echo SHOW_SUCCESS | ncat 127.0.0.1 5050
+echo SHOW_ERROR | ncat 127.0.0.1 5050
+echo SHOW_CAROUSEL | ncat 127.0.0.1 5050
+
+COMO ENVIAR PELO WI-FI
+----------------------
+1. Deixe o tablet e o computador na mesma rede Wi-Fi.
+2. Descubra o IP do tablet Android nas configurações de Wi-Fi.
+3. Envie pelo navegador ou PowerShell:
+
+Invoke-RestMethod http://IP_DO_TABLET:8787/command/cartao
+
+Exemplo:
+Invoke-RestMethod http://192.168.0.50:8787/command/senha
+
+OBSERVAÇÃO
+----------
+No emulador Android, o acesso pelo PC normalmente precisa do adb forward.
+Em tablet físico na mesma rede, pode usar o IP do tablet direto.
