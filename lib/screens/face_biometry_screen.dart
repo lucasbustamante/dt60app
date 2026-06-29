@@ -63,6 +63,8 @@ class _FaceScannerState extends State<_FaceScanner>
   CameraController? _cameraController;
   Future<void>? _cameraInit;
   String? _cameraError;
+  String? _cameraStatus;
+  Map<dynamic, dynamic>? _cameraDiagnostics;
   Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
   bool _autoAdvanceConfigured = false;
@@ -116,39 +118,110 @@ class _FaceScannerState extends State<_FaceScanner>
         return;
       }
 
+      final diagnostics = await _loadCameraDiagnostics();
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        _cameraError = 'Nenhuma câmera encontrada';
+        _cameraError =
+            'Nenhuma câmera encontrada. ${_formatCameraDiagnostics(diagnostics)}';
+        if (mounted) setState(() {});
         return;
       }
 
-      final camera = cameras.firstWhere(
-        (item) => item.lensDirection == CameraLensDirection.external,
-        orElse: () => cameras.firstWhere(
-          (item) =>
-              item.name.toLowerCase().contains('usb') ||
-              item.name.toLowerCase().contains('external'),
-          orElse: () => cameras.firstWhere(
-            (item) => item.lensDirection == CameraLensDirection.front,
-            orElse: () => cameras.first,
-          ),
-        ),
-      );
+      final orderedCameras = _orderedCameras(cameras, diagnostics);
+      final attempts = <String>[];
 
-      final controller = CameraController(
-        camera,
-        ResolutionPreset.medium,
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
-      );
+      for (final camera in orderedCameras) {
+        for (final preset in const [
+          ResolutionPreset.low,
+          ResolutionPreset.medium,
+        ]) {
+          final controller = CameraController(
+            camera,
+            preset,
+            enableAudio: false,
+          );
 
-      _cameraController = controller;
-      await controller.initialize();
+          try {
+            await controller.initialize().timeout(const Duration(seconds: 6));
+            _cameraController = controller;
+            _cameraError = null;
+            _cameraStatus =
+                'Câmera ${camera.name} ativa (${camera.lensDirection.name}, ${preset.name})';
+            if (mounted) setState(() {});
+            return;
+          } catch (error) {
+            attempts.add(
+              '${camera.name}/${camera.lensDirection.name}/${preset.name}: $error',
+            );
+            await controller.dispose();
+          }
+        }
+      }
+
+      _cameraError =
+          'Não foi possível abrir a câmera. Tentativas: ${attempts.take(4).join(' | ')}. ${_formatCameraDiagnostics(diagnostics)}';
       if (mounted) setState(() {});
     } catch (error) {
-      _cameraError = error.toString();
+      _cameraError =
+          'Erro ao iniciar câmera: $error. ${_formatCameraDiagnostics(_cameraDiagnostics)}';
       if (mounted) setState(() {});
     }
+  }
+
+  Future<Map<dynamic, dynamic>?> _loadCameraDiagnostics() async {
+    try {
+      final diagnostics = await _permissionChannel.invokeMethod<dynamic>(
+        'getCameraDiagnostics',
+      );
+      if (diagnostics is Map<dynamic, dynamic>) {
+        _cameraDiagnostics = diagnostics;
+        return diagnostics;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  List<CameraDescription> _orderedCameras(
+    List<CameraDescription> cameras,
+    Map<dynamic, dynamic>? diagnostics,
+  ) {
+    final nativeBest = diagnostics?['bestCameraId']?.toString();
+    final sorted = [...cameras];
+    sorted.sort((a, b) {
+      return _cameraScore(b, nativeBest).compareTo(_cameraScore(a, nativeBest));
+    });
+    return sorted;
+  }
+
+  int _cameraScore(CameraDescription camera, String? nativeBest) {
+    final name = camera.name.toLowerCase();
+    var score = 0;
+    if (nativeBest != null && camera.name == nativeBest) score += 120;
+    if (camera.lensDirection == CameraLensDirection.external) score += 100;
+    if (name.contains('usb') ||
+        name.contains('external') ||
+        name.contains('uvc')) {
+      score += 80;
+    }
+    if (camera.lensDirection == CameraLensDirection.front) score += 40;
+    return score;
+  }
+
+  String _formatCameraDiagnostics(Map<dynamic, dynamic>? diagnostics) {
+    if (diagnostics == null) return '';
+
+    final cameras = diagnostics['cameras'];
+    final usbDevices = diagnostics['usbDevices'];
+    final cameraCount = cameras is List ? cameras.length : 0;
+    final usbVideoCount = usbDevices is List
+        ? usbDevices
+            .where((item) => item is Map && item['hasVideoInterface'] == true)
+            .length
+        : 0;
+    final best = diagnostics['bestCameraId']?.toString();
+    final externalFeature = diagnostics['hasCameraExternalFeature'] == true;
+
+    return 'Android: $cameraCount câmera(s), USB vídeo: $usbVideoCount, externa: ${externalFeature ? 'sim' : 'não'}, preferida: ${best ?? '-'}';
   }
 
   @override
@@ -276,9 +349,12 @@ class _FaceScannerState extends State<_FaceScanner>
               SizedBox(height: miniLandscape ? 6 : 14),
               Text(
                 _cameraError == null
-                    ? 'Câmera ativa • mantenha o rosto centralizado'
-                    : 'Câmera indisponível • verifique a permissão',
+                    ? (_cameraStatus ??
+                        'Câmera ativa - mantenha o rosto centralizado')
+                    : _cameraError!,
                 textAlign: TextAlign.center,
+                maxLines: miniLandscape ? 2 : 4,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: miniLandscape ? 11 : (dense ? 13 : 16),
                   fontWeight: FontWeight.w700,

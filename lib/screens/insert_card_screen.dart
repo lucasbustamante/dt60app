@@ -17,6 +17,7 @@ class InsertCardScreen extends StatefulWidget {
 
 class _InsertCardScreenState extends State<InsertCardScreen> {
   StreamSubscription<CardReaderEvent>? _cardSubscription;
+  Timer? _startDetectionTimer;
   bool _goingToPassword = false;
 
   @override
@@ -30,11 +31,14 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
         _goToPassword();
       }
     });
-    unawaited(CardReaderService.instance.startDetection());
+    _startDetectionTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) unawaited(CardReaderService.instance.startDetection());
+    });
   }
 
   @override
   void dispose() {
+    _startDetectionTimer?.cancel();
     unawaited(CardReaderService.instance.stopDetection());
     unawaited(_cardSubscription?.cancel());
     super.dispose();
@@ -87,7 +91,7 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
             ),
           ),
         ),
-        right: const _InsertCardAnimation(),
+        right: const RepaintBoundary(child: _InsertCardAnimation()),
       ),
     );
   }

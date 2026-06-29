@@ -16,6 +16,7 @@ class ContactlessCardScreen extends StatefulWidget {
 
 class _ContactlessCardScreenState extends State<ContactlessCardScreen> {
   StreamSubscription<CardReaderEvent>? _cardSubscription;
+  Timer? _startDetectionTimer;
   bool _goingToPassword = false;
 
   @override
@@ -29,11 +30,14 @@ class _ContactlessCardScreenState extends State<ContactlessCardScreen> {
         _goToPassword();
       }
     });
-    unawaited(CardReaderService.instance.startDetection());
+    _startDetectionTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) unawaited(CardReaderService.instance.startDetection());
+    });
   }
 
   @override
   void dispose() {
+    _startDetectionTimer?.cancel();
     unawaited(CardReaderService.instance.stopDetection());
     unawaited(_cardSubscription?.cancel());
     super.dispose();
@@ -79,7 +83,7 @@ class _ContactlessCardScreenState extends State<ContactlessCardScreen> {
             ),
           ),
         ),
-        right: const _ContactlessAnimation(),
+        right: const RepaintBoundary(child: _ContactlessAnimation()),
       ),
     );
   }

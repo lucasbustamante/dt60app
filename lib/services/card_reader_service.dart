@@ -112,6 +112,10 @@ class CardReaderService {
     required String color,
     String effect = 'solid',
     int? code,
+    int? index,
+    int? red,
+    int? green,
+    int? blue,
   }) async {
     try {
       await _channel.invokeMethod('testLed', {
@@ -119,6 +123,10 @@ class CardReaderService {
         'color': color,
         'effect': effect,
         if (code != null) 'code': code,
+        if (index != null) 'index': index,
+        if (red != null) 'red': red,
+        if (green != null) 'green': green,
+        if (blue != null) 'blue': blue,
       });
     } on MissingPluginException {
       debugPrint('MethodChannel nativo do LED não foi encontrado.');

@@ -48,6 +48,29 @@ Também funciona via HTTP com caminhos compostos:
 - `led_off` ou `/led/off`
 - `led_loading` ou `/led/loading`
 
+A tela `SHOW_LED` / `led` também possui uma bancada de teste RGB livre:
+
+- informe R/G/B de `0` a `255`;
+- informe o índice do `tapeLamp` de `0` a `12`;
+- informe o código da `lightStrip`;
+- selecione alvo/efeito e aplique o teste.
+
+Alvos disponíveis na bancada:
+
+- Superior RGB + `tapeLamp`
+- Finger por índice
+- Finger em todos os índices
+- `breathOn`
+- `marqueeOn`
+- Probe com todos os métodos
+- Desligamento agressivo do SDK
+
+Se o finger continuar azul mesmo após “Desligar agressivo”, o LED pode estar sendo mantido pelo firmware como indicador físico não controlável por essas APIs do SDK.
+
+## Câmera externa
+
+A biometria facial agora usa a implementação Android Camera2 (`camera_android`) e consulta o `CameraManager` nativo para priorizar câmeras externas/USB. Se nenhuma câmera abrir, a própria tela mostra diagnóstico com quantidade de câmeras Android, presença de USB vídeo, recurso de câmera externa e câmera preferida detectada.
+
 ## Comandos antigos preservados
 
 - `standby`, `SHOW_CAROUSEL`
@@ -61,4 +84,3 @@ Também funciona via HTTP com caminhos compostos:
 - `erro`, `SHOW_ERROR`
 - `docinho`, `SHOW_DOCINHO`
 - `led`, `SHOW_LED`
-
