@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -87,11 +88,13 @@ class _PasswordScreenState extends State<PasswordScreen> {
     _leaving = true;
     _focusTimer?.cancel();
     final session = _journeySession;
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      session == null ? '/sucesso' : '/biometria',
-      (_) => false,
-      arguments: session,
-    );
+    final nextRoute = session == null
+        ? '/sucesso'
+        : (math.Random().nextBool() ? '/biometria' : '/biometria-digital');
+
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(nextRoute, (_) => false, arguments: session);
   }
 
   void _cancel() {
@@ -445,8 +448,9 @@ class _ActionButton extends StatelessWidget {
                 foregroundColor: disabled ? AppColors.muted : color,
                 disabledForegroundColor: AppColors.muted,
                 side: BorderSide(
-                  color:
-                      disabled ? AppColors.line : color.withValues(alpha: 0.75),
+                  color: disabled
+                      ? AppColors.line
+                      : color.withValues(alpha: 0.75),
                   width: 1.2,
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 6),

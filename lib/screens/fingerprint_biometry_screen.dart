@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -17,6 +18,10 @@ class FingerprintBiometryScreen extends StatefulWidget {
 
 class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   StreamSubscription<CardReaderEvent>? _subscription;
+  Timer? _autoAdvanceTimer;
+  ProductJourneySession? _journeySession;
+  bool _configured = false;
+  bool _fingerprintDetectionStarted = false;
   bool _goingToPassword = false;
 
   @override
@@ -24,15 +29,41 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     super.initState();
     _subscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.fingerprintDetected) {
-        _goToPassword();
+        if (_journeySession == null) {
+          _goToPassword();
+        } else {
+          _finishProductJourney();
+        }
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_configured) return;
+
+    _configured = true;
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is ProductJourneySession) {
+      _journeySession = arguments;
+      _autoAdvanceTimer = Timer(
+        const Duration(milliseconds: 5000),
+        _finishProductJourney,
+      );
+      return;
+    }
+
+    _fingerprintDetectionStarted = true;
     unawaited(CardReaderService.instance.startFingerprintDetection());
   }
 
   @override
   void dispose() {
-    unawaited(CardReaderService.instance.stopFingerprintDetection());
+    _autoAdvanceTimer?.cancel();
+    if (_fingerprintDetectionStarted) {
+      unawaited(CardReaderService.instance.stopFingerprintDetection());
+    }
     unawaited(_subscription?.cancel());
     super.dispose();
   }
@@ -41,6 +72,17 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     if (!mounted || _goingToPassword) return;
     _goingToPassword = true;
     Navigator.of(context).pushNamedAndRemoveUntil('/senha', (_) => false);
+  }
+
+  void _finishProductJourney() {
+    if (!mounted || _goingToPassword) return;
+    _goingToPassword = true;
+    _autoAdvanceTimer?.cancel();
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      '/sucesso',
+      (_) => false,
+      arguments: _journeySession,
+    );
   }
 
   @override
