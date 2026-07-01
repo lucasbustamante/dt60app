@@ -440,12 +440,17 @@ class _ProcessSteps extends StatelessWidget {
   final int? activeStep;
   final bool compact;
 
-  static const _labels = ['Cartão', 'Senha', 'Biometria', 'Conclusão'];
+  static const _labels = [
+    'Pagamento',
+    'Autenticação',
+    'Processando',
+    'Conclusão',
+  ];
 
   static const _icons = [
     Icons.credit_card_outlined,
-    Icons.lock_outline,
-    Icons.fingerprint,
+    Icons.verified_user_outlined,
+    Icons.sync,
     Icons.check,
   ];
 

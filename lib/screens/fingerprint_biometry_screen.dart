@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/journey_flow.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
@@ -71,7 +72,10 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   void _goToPassword() {
     if (!mounted || _goingToPassword) return;
     _goingToPassword = true;
-    Navigator.of(context).pushNamedAndRemoveUntil('/senha', (_) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      JourneyFlow.passwordRoute,
+      (_) => false,
+    );
   }
 
   void _finishProductJourney() {
@@ -79,7 +83,7 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     _goingToPassword = true;
     _autoAdvanceTimer?.cancel();
     Navigator.of(context).pushNamedAndRemoveUntil(
-      '/sucesso',
+      JourneyFlow.processingRoute,
       (_) => false,
       arguments: _journeySession,
     );
@@ -88,7 +92,7 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   @override
   Widget build(BuildContext context) {
     return AppFrame(
-      activeStep: 2,
+      activeStep: 1,
       child: ResponsiveTwoPane(
         left: Padding(
           padding: const EdgeInsets.only(left: 22, right: 10),

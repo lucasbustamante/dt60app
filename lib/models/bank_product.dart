@@ -9,6 +9,62 @@ enum BankProductKind {
   phoneInsurance,
 }
 
+enum PaymentMethod {
+  nfc(
+    label: 'Aproximação (NFC)',
+    shortLabel: 'Aproximação',
+    description: 'Aproxime o cartão ou celular do sensor do terminal.',
+  ),
+  chip(
+    label: 'Inserção do cartão (Chip)',
+    shortLabel: 'Chip',
+    description: 'Insira o cartão na leitora com o chip voltado para cima.',
+  ),
+  magneticStripe(
+    label: 'Tarja Magnética',
+    shortLabel: 'Tarja',
+    description: 'Passe o cartão na leitora usando a tarja magnética.',
+  );
+
+  const PaymentMethod({
+    required this.label,
+    required this.shortLabel,
+    required this.description,
+  });
+
+  final String label;
+  final String shortLabel;
+  final String description;
+}
+
+enum AuthenticationMethod {
+  faceBiometry(
+    label: 'Biometria Facial',
+    shortLabel: 'Facial',
+    description: 'Validação por captura facial no terminal.',
+  ),
+  fingerprintBiometry(
+    label: 'Biometria Digital',
+    shortLabel: 'Digital',
+    description: 'Validação pelo sensor de biometria digital.',
+  ),
+  password(
+    label: 'Digitação da Senha',
+    shortLabel: 'Senha',
+    description: 'Validação pela senha digitada no pinpad.',
+  );
+
+  const AuthenticationMethod({
+    required this.label,
+    required this.shortLabel,
+    required this.description,
+  });
+
+  final String label;
+  final String shortLabel;
+  final String description;
+}
+
 class BankProduct {
   const BankProduct({
     required this.kind,
@@ -18,6 +74,8 @@ class BankProduct {
     required this.estimatedValue,
     required this.benefits,
     required this.icon,
+    required this.paymentMethod,
+    required this.authenticationMethod,
   });
 
   final BankProductKind kind;
@@ -27,6 +85,8 @@ class BankProduct {
   final String estimatedValue;
   final List<String> benefits;
   final IconData icon;
+  final PaymentMethod paymentMethod;
+  final AuthenticationMethod authenticationMethod;
 
   String get successMessage => '$shortTitle contratado com sucesso.';
 }
@@ -35,6 +95,28 @@ class ProductJourneySession {
   const ProductJourneySession({required this.product});
 
   final BankProduct product;
+}
+
+class OperationFailure {
+  const OperationFailure({
+    required this.title,
+    required this.message,
+    this.session,
+  });
+
+  factory OperationFailure.cancelled(ProductJourneySession? session) {
+    return OperationFailure(
+      title: 'Operação cancelada',
+      message: session == null
+          ? 'A transação foi cancelada com segurança.'
+          : 'A contratação de ${session.product.shortTitle} foi cancelada com segurança.',
+      session: session,
+    );
+  }
+
+  final String title;
+  final String message;
+  final ProductJourneySession? session;
 }
 
 class BankProductCatalog {
@@ -55,11 +137,13 @@ class BankProductCatalog {
         'Cobertura simples para imprevistos do dia a dia',
       ],
       icon: Icons.pets_outlined,
+      paymentMethod: PaymentMethod.nfc,
+      authenticationMethod: AuthenticationMethod.faceBiometry,
     ),
     BankProduct(
       kind: BankProductKind.protectedBag,
-      title: 'Seguro Bolsa Protegida',
-      shortTitle: 'Seguro Bolsa Protegida',
+      title: 'Bolsa Protegida',
+      shortTitle: 'Bolsa Protegida',
       description:
           'Cobertura para reduzir prejuízos em caso de roubo ou furto da bolsa e dos itens essenciais transportados.',
       estimatedValue: 'R\$ 12,90/mês',
@@ -70,11 +154,13 @@ class BankProductCatalog {
         'Atendimento para bloqueios e orientações',
       ],
       icon: Icons.work_outline,
+      paymentMethod: PaymentMethod.magneticStripe,
+      authenticationMethod: AuthenticationMethod.password,
     ),
     BankProduct(
       kind: BankProductKind.health,
-      title: 'Plano de Saúde / Assistência Saúde',
-      shortTitle: 'Assistência Saúde',
+      title: 'Seguro Saúde',
+      shortTitle: 'Seguro Saúde',
       description:
           'Assistência para facilitar o acesso a cuidados básicos de saúde, orientação médica e serviços de apoio.',
       estimatedValue: 'R\$ 39,90/mês',
@@ -85,6 +171,8 @@ class BankProductCatalog {
         'Atendimento assistencial para toda a família',
       ],
       icon: Icons.health_and_safety_outlined,
+      paymentMethod: PaymentMethod.chip,
+      authenticationMethod: AuthenticationMethod.fingerprintBiometry,
     ),
     BankProduct(
       kind: BankProductKind.cardProtection,
@@ -100,11 +188,13 @@ class BankProductCatalog {
         'Canal de atendimento para orientação imediata',
       ],
       icon: Icons.credit_card_outlined,
+      paymentMethod: PaymentMethod.nfc,
+      authenticationMethod: AuthenticationMethod.password,
     ),
     BankProduct(
       kind: BankProductKind.homeAssistance,
-      title: 'Assistência Residencial',
-      shortTitle: 'Assistência Residencial',
+      title: 'Proteção Residencial',
+      shortTitle: 'Proteção Residencial',
       description:
           'Serviços de apoio para emergências em casa, como chaveiro, elétrica, hidráulica e pequenos reparos.',
       estimatedValue: 'R\$ 19,90/mês',
@@ -115,6 +205,8 @@ class BankProductCatalog {
         'Atendimento 24 horas para emergências',
       ],
       icon: Icons.home_repair_service_outlined,
+      paymentMethod: PaymentMethod.chip,
+      authenticationMethod: AuthenticationMethod.faceBiometry,
     ),
     BankProduct(
       kind: BankProductKind.phoneInsurance,
@@ -130,6 +222,8 @@ class BankProductCatalog {
         'Processo simples de acionamento',
       ],
       icon: Icons.phone_iphone_outlined,
+      paymentMethod: PaymentMethod.magneticStripe,
+      authenticationMethod: AuthenticationMethod.fingerprintBiometry,
     ),
   ];
 

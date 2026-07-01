@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/journey_flow.dart';
 import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -21,7 +22,7 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
   final FocusNode _focusNode = FocusNode();
   StreamSubscription<CardReaderEvent>? _cardSubscription;
   Timer? _startDetectionTimer;
-  bool _goingToPassword = false;
+  bool _goingToNextStep = false;
 
   @override
   void initState() {
@@ -33,15 +34,21 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
         return;
       }
 
-      if (event.type == CardReaderEventType.icInserted ||
-          event.type == CardReaderEventType.magSwiped ||
-          event.type == CardReaderEventType.nfcApproached) {
-        _goToPassword();
+      final expectedMethod =
+          _journeySession?.product.paymentMethod ?? PaymentMethod.chip;
+      if (JourneyFlow.matchesPaymentEvent(expectedMethod, event.type)) {
+        _goToNextStep();
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _ensureFocus());
     _startDetectionTimer = Timer(const Duration(milliseconds: 250), () {
-      if (mounted) unawaited(CardReaderService.instance.startDetection());
+      if (mounted) {
+        unawaited(
+          CardReaderService.instance.startDetection(
+            mode: CardDetectionMode.chip,
+          ),
+        );
+      }
     });
   }
 
@@ -55,15 +62,15 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
   }
 
   void _ensureFocus() {
-    if (!mounted || _goingToPassword) return;
+    if (!mounted || _goingToNextStep) return;
     if (!_focusNode.hasFocus) {
       _focusNode.requestFocus();
     }
   }
 
-  Future<void> _goToPassword() async {
-    if (!mounted || _goingToPassword) return;
-    _goingToPassword = true;
+  Future<void> _goToNextStep() async {
+    if (!mounted || _goingToNextStep) return;
+    _goingToNextStep = true;
     final session = _journeySession;
 
     await CardReaderService.instance.stopDetection();
@@ -71,22 +78,27 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
+    final nextRoute = session == null
+        ? JourneyFlow.passwordRoute
+        : JourneyFlow.authenticationRouteFor(
+            session.product.authenticationMethod,
+          );
     Navigator.of(
       context,
-    ).pushNamedAndRemoveUntil('/senha', (_) => false, arguments: session);
+    ).pushNamedAndRemoveUntil(nextRoute, (_) => false, arguments: session);
   }
 
   Future<void> _cancelOperation() async {
-    if (!mounted || _goingToPassword) return;
-    _goingToPassword = true;
+    if (!mounted || _goingToNextStep) return;
+    _goingToNextStep = true;
     _startDetectionTimer?.cancel();
     await CardReaderService.instance.stopDetection();
 
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
-      '/erro',
+      JourneyFlow.errorRoute,
       (_) => false,
-      arguments: _journeySession,
+      arguments: OperationFailure.cancelled(_journeySession),
     );
   }
 
@@ -96,7 +108,7 @@ class _InsertCardScreenState extends State<InsertCardScreen> {
   }
 
   void _handleKey(KeyEvent event) {
-    if (event is! KeyDownEvent || _goingToPassword) return;
+    if (event is! KeyDownEvent || _goingToNextStep) return;
     if (PinpadKeys.isCancel(event.logicalKey)) {
       unawaited(_cancelOperation());
     }

@@ -28,11 +28,13 @@ class StandbyScreen extends StatelessWidget {
                   flex: 6,
                   child: Align(alignment: Alignment.centerLeft, child: intro),
                 ),
-                //const SizedBox(width: 26),
                 Expanded(
                   flex: 10,
                   child: Center(
-                    child: SizedBox(height: 100, child: const AdCarousel()),
+                    child: SizedBox(
+                      height: constraints.maxHeight.clamp(280.0, 420.0),
+                      child: const AdCarousel(),
+                    ),
                   ),
                 ),
               ],
@@ -44,7 +46,7 @@ class StandbyScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 intro,
-                const SizedBox(height: 300, child: AdCarousel()),
+                const SizedBox(height: 340, child: AdCarousel()),
                 const SizedBox(height: 10),
               ],
             ),

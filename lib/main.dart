@@ -13,6 +13,7 @@ import 'screens/contactless_card_screen.dart';
 import 'screens/insert_card_screen.dart';
 import 'screens/led_test_screen.dart';
 import 'screens/password_screen.dart';
+import 'screens/processing_screen.dart';
 import 'screens/product_offer_screen.dart';
 import 'screens/standby_screen.dart';
 import 'screens/success_screen.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
   static const faceBiometry = '/biometria';
   static const fingerprintBiometry = '/biometria-digital';
   static const contactlessCard = '/aproximar';
+  static const processing = '/processando';
   static const success = '/sucesso';
   static const error = '/erro';
   static const docinho = '/docinho';
@@ -177,6 +179,7 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
         AppRoutes.faceBiometry: (_) => const FaceBiometryScreen(),
         AppRoutes.fingerprintBiometry: (_) => const FingerprintBiometryScreen(),
         AppRoutes.contactlessCard: (_) => const ContactlessCardScreen(),
+        AppRoutes.processing: (_) => const ProcessingScreen(),
         AppRoutes.success: (_) => const SuccessScreen(),
         AppRoutes.error: (_) => const ErrorScreen(),
         AppRoutes.docinho: (_) => const DocinhoScreen(),

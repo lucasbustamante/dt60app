@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/journey_flow.dart';
 import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -60,12 +61,9 @@ class _ProductOfferScreenState extends State<ProductOfferScreen> {
   void _hire() {
     if (_leaving) return;
     _leaving = true;
+
     final session = ProductJourneySession(product: widget.product);
-    final route = switch (math.Random().nextInt(3)) {
-      0 => '/inserir-cartao',
-      1 => '/cartao',
-      _ => '/aproximar',
-    };
+    final route = JourneyFlow.paymentRouteFor(widget.product.paymentMethod);
 
     Navigator.of(
       context,
@@ -75,7 +73,14 @@ class _ProductOfferScreenState extends State<ProductOfferScreen> {
   void _cancel() {
     if (_leaving) return;
     _leaving = true;
-    Navigator.of(context).pushNamedAndRemoveUntil('/erro', (_) => false);
+
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      JourneyFlow.errorRoute,
+      (_) => false,
+      arguments: OperationFailure.cancelled(
+        ProductJourneySession(product: widget.product),
+      ),
+    );
   }
 
   void _handleKey(KeyEvent event) {
@@ -240,6 +245,11 @@ class _ProductSummary extends StatelessWidget {
               letterSpacing: 0,
             ),
           ),
+          SizedBox(height: compact ? 12 : 18),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: _FlowSummary(product: product, compact: compact),
+          ),
         ],
       ),
     );
@@ -294,7 +304,7 @@ class _OfferDetails extends StatelessWidget {
           ),
           SizedBox(height: compact ? 14 : 22),
           const Text(
-            'Principais benefícios',
+            'Informações detalhadas',
             style: TextStyle(
               color: AppColors.text,
               fontSize: 16,
@@ -311,6 +321,20 @@ class _OfferDetails extends StatelessWidget {
           Row(
             children: [
               Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: onHire,
+                  icon: const Icon(Icons.check),
+                  label: const Text('Contratar'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: compact ? 8 : 16,
+                      vertical: compact ? 12 : 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
                 child: OutlinedButton.icon(
                   onPressed: onCancel,
                   icon: const Icon(Icons.close),
@@ -325,24 +349,99 @@ class _OfferDetails extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: onHire,
-                  icon: const Icon(Icons.check),
-                  label: const Text('Contratar'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: compact ? 8 : 16,
-                      vertical: compact ? 12 : 16,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _FlowSummary extends StatelessWidget {
+  const _FlowSummary({required this.product, required this.compact});
+
+  final BankProduct product;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(compact ? 10 : 12),
+      decoration: BoxDecoration(
+        color: AppColors.orangeSoft,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.orange.withValues(alpha: 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Fluxo desta contratação',
+            style: TextStyle(
+              color: AppColors.text,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0,
+            ),
+          ),
+          SizedBox(height: compact ? 8 : 10),
+          _FlowLine(
+            icon: Icons.credit_card_outlined,
+            label: 'Pagamento',
+            value: product.paymentMethod.label,
+          ),
+          SizedBox(height: compact ? 5 : 7),
+          _FlowLine(
+            icon: Icons.verified_user_outlined,
+            label: 'Autenticação',
+            value: product.authenticationMethod.label,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FlowLine extends StatelessWidget {
+  const _FlowLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.orange, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            color: AppColors.text,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/journey_flow.dart';
 import '../services/pinpad_keys.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -89,8 +89,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
     _focusTimer?.cancel();
     final session = _journeySession;
     final nextRoute = session == null
-        ? '/sucesso'
-        : (math.Random().nextBool() ? '/biometria' : '/biometria-digital');
+        ? JourneyFlow.successRoute
+        : JourneyFlow.processingRoute;
 
     Navigator.of(
       context,
@@ -102,9 +102,9 @@ class _PasswordScreenState extends State<PasswordScreen> {
     _leaving = true;
     _focusTimer?.cancel();
     Navigator.of(context).pushNamedAndRemoveUntil(
-      '/erro',
+      JourneyFlow.errorRoute,
       (_) => false,
-      arguments: _journeySession,
+      arguments: OperationFailure.cancelled(_journeySession),
     );
   }
 
@@ -448,9 +448,8 @@ class _ActionButton extends StatelessWidget {
                 foregroundColor: disabled ? AppColors.muted : color,
                 disabledForegroundColor: AppColors.muted,
                 side: BorderSide(
-                  color: disabled
-                      ? AppColors.line
-                      : color.withValues(alpha: 0.75),
+                  color:
+                      disabled ? AppColors.line : color.withValues(alpha: 0.75),
                   width: 1.2,
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 6),

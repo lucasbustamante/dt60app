@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
@@ -55,6 +56,12 @@ class _ErrorScreenState extends State<ErrorScreen>
 
   @override
   Widget build(BuildContext context) {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    final failure = arguments is OperationFailure ? arguments : null;
+    final title = failure?.title ?? 'Operação não concluída';
+    final message = failure?.message ??
+        'A transação foi cancelada ou encontrou uma falha. Tente novamente.';
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: _backToStandby,
@@ -85,10 +92,10 @@ class _ErrorScreenState extends State<ErrorScreen>
                     ),
                   ),
                   const SizedBox(height: 30),
-                  const Text(
-                    'Operação não concluída',
+                  Text(
+                    title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.text,
                       fontSize: 40,
                       height: 1.08,
@@ -97,10 +104,10 @@ class _ErrorScreenState extends State<ErrorScreen>
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'A transação foi cancelada ou encontrou uma falha. Tente novamente.',
+                  Text(
+                    message,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 18,
                       height: 1.35,

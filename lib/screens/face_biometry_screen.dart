@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
 import '../services/card_reader_service.dart';
+import '../services/journey_flow.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 
@@ -16,7 +17,7 @@ class FaceBiometryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppFrame(
-      activeStep: 2,
+      activeStep: 1,
       child: ResponsiveTwoPane(
         left: Padding(
           padding: const EdgeInsets.only(left: 22, right: 10),
@@ -100,7 +101,7 @@ class _FaceScannerState extends State<_FaceScanner>
   void _finishProductJourney() {
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
-      '/sucesso',
+      JourneyFlow.processingRoute,
       (_) => false,
       arguments: _journeySession,
     );

@@ -6,23 +6,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/bank_product.dart';
 
-/// Comandos aceitos pelo terminal/pinpad.
-///
-/// Você pode enviar tanto em português quanto no formato SHOW_*. Exemplos:
-/// standby, carrossel, show_carousel
-/// cartao, card, show_card
-/// senha, password, show_password
-/// inserir_cartao, insert_card, show_insert_card
-/// biometria, face, show_face
-/// digital, biometria_digital, show_fingerprint
-/// aproximar, nfc, contactless, show_aproximar
-/// sucesso, success, show_success
-/// erro, error, show_error
-/// docinho, doce, show_docinho
-/// led, leds, show_led
-/// seguro_pet, bolsa_protegida, assistencia_saude, protecao_cartao
-/// assistencia_residencial, seguro_celular
-/// led_red, led_green, led_blue, led_yellow, led_purple, led_white, led_off
 enum TerminalCommand {
   standby('standby'),
   cartao('cartao'),
@@ -145,8 +128,11 @@ enum TerminalCommand {
       case 'cartao':
       case 'card':
       case 'passar_cartao':
+      case 'tarja':
+      case 'tarja_magnetica':
       case 'show_card':
       case 'show_cartao':
+      case 'show_tarja':
         return TerminalCommand.cartao;
 
       case 'senha':
@@ -161,6 +147,7 @@ enum TerminalCommand {
       case 'chip':
       case 'show_insert_card':
       case 'show_inserir_cartao':
+      case 'show_chip':
         return TerminalCommand.inserirCartao;
 
       case 'biometria':
@@ -182,6 +169,7 @@ enum TerminalCommand {
 
       case 'aproximar':
       case 'aproxime':
+      case 'aproximacao':
       case 'nfc':
       case 'contactless':
       case 'celular':
@@ -202,6 +190,7 @@ enum TerminalCommand {
       case 'error':
       case 'negado':
       case 'recusado':
+      case 'cancelado':
       case 'show_error':
       case 'show_erro':
         return TerminalCommand.erro;
@@ -241,11 +230,13 @@ enum TerminalCommand {
       case 'plano_saude':
       case 'plano_de_saude':
       case 'assistencia_saude':
+      case 'seguro_saude':
       case 'saude':
       case 'jornada_saude':
       case 'contratar_saude':
       case 'show_saude':
       case 'show_assistencia_saude':
+      case 'show_seguro_saude':
         return TerminalCommand.assistenciaSaude;
 
       case 'protecao_cartao':
@@ -258,12 +249,16 @@ enum TerminalCommand {
         return TerminalCommand.protecaoCartao;
 
       case 'assistencia_residencial':
+      case 'protecao_residencial':
       case 'residencial':
       case 'casa':
       case 'lar':
       case 'jornada_assistencia_residencial':
+      case 'jornada_protecao_residencial':
       case 'contratar_assistencia_residencial':
+      case 'contratar_protecao_residencial':
       case 'show_assistencia_residencial':
+      case 'show_protecao_residencial':
         return TerminalCommand.assistenciaResidencial;
 
       case 'seguro_celular':
@@ -343,18 +338,11 @@ enum TerminalCommand {
         .trim()
         .toLowerCase()
         .replaceAll(RegExp(r'[-\s]+'), '_')
-        .replaceAll('á', 'a')
-        .replaceAll('à', 'a')
-        .replaceAll('ã', 'a')
-        .replaceAll('â', 'a')
-        .replaceAll('é', 'e')
-        .replaceAll('ê', 'e')
-        .replaceAll('í', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ô', 'o')
-        .replaceAll('õ', 'o')
-        .replaceAll('ú', 'u')
-        .replaceAll('ü', 'u')
+        .replaceAll(RegExp('[áàãâä]'), 'a')
+        .replaceAll(RegExp('[éêë]'), 'e')
+        .replaceAll(RegExp('[íîï]'), 'i')
+        .replaceAll(RegExp('[óôõö]'), 'o')
+        .replaceAll(RegExp('[úü]'), 'u')
         .replaceAll('ç', 'c');
   }
 }
@@ -369,13 +357,7 @@ class TerminalCommandService {
   });
 
   final TerminalCommandHandler onCommand;
-
-  /// Porta TCP simples para comandos em texto.
-  /// Exemplo: echo SHOW_CARD | nc 127.0.0.1 5050
   final int tcpPort;
-
-  /// Porta HTTP opcional para comandos por navegador/PowerShell.
-  /// Exemplo: Invoke-RestMethod http://127.0.0.1:8787/command/senha
   final int httpPort;
 
   ServerSocket? _tcpServer;
@@ -419,8 +401,11 @@ class TerminalCommandService {
     debugPrint('Cliente TCP conectado: $remote');
 
     client
-        .transform(utf8.decoder as StreamTransformer<Uint8List, dynamic>)
-        .transform(const LineSplitter())
+        .cast<List<int>>()
+        .transform(utf8.decoder)
+        .transform(
+          const LineSplitter(),
+        )
         .listen(
       (line) {
         final result = _dispatch(line, source: 'tcp');
@@ -571,6 +556,7 @@ class TerminalCommandService {
         'SHOW_SAUDE',
         'SHOW_PROTECAO_CARTAO',
         'SHOW_ASSISTENCIA_RESIDENCIAL',
+        'SHOW_PROTECAO_RESIDENCIAL',
         'SHOW_SEGURO_CELULAR',
         'standby',
         'cartao',
@@ -589,8 +575,10 @@ class TerminalCommandService {
         'seguro_pet',
         'bolsa_protegida',
         'assistencia_saude',
+        'seguro_saude',
         'protecao_cartao',
         'assistencia_residencial',
+        'protecao_residencial',
         'seguro_celular',
         'led_red',
         'led_green',
