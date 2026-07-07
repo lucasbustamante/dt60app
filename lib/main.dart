@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'models/bank_product.dart';
+import 'screens/account_opening_screen.dart';
 import 'screens/card_payment_screen.dart';
 import 'screens/docinho_screen.dart';
 import 'screens/error_screen.dart';
@@ -54,6 +55,7 @@ class AppRoutes {
   static const docinho = '/docinho';
   static const led = '/led';
   static const productOffer = '/oferta-produto';
+  static const accountOpening = '/abertura-conta';
 }
 
 class PinpadTerminalApp extends StatefulWidget {
@@ -94,6 +96,15 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
 
     if (command == TerminalCommand.ledLoading) {
       unawaited(CardReaderService.instance.playFixedLedLoading());
+      return;
+    }
+
+    if (command == TerminalCommand.aberturaConta) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) return;
+        navigator.pushNamedAndRemoveUntil(AppRoutes.accountOpening, (_) => false);
+      });
       return;
     }
 
@@ -151,6 +162,7 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
       case TerminalCommand.protecaoCartao:
       case TerminalCommand.assistenciaResidencial:
       case TerminalCommand.seguroCelular:
+      case TerminalCommand.aberturaConta:
       case TerminalCommand.ledRed:
       case TerminalCommand.ledGreen:
       case TerminalCommand.ledBlue:
@@ -184,6 +196,7 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
         AppRoutes.error: (_) => const ErrorScreen(),
         AppRoutes.docinho: (_) => const DocinhoScreen(),
         AppRoutes.led: (_) => const LedTestScreen(),
+        AppRoutes.accountOpening: (_) => const AccountOpeningScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == AppRoutes.productOffer) {

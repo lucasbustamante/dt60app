@@ -24,6 +24,7 @@ enum TerminalCommand {
   protecaoCartao('protecao_cartao'),
   assistenciaResidencial('assistencia_residencial'),
   seguroCelular('seguro_celular'),
+  aberturaConta('abertura_conta'),
   ledRed('led_red'),
   ledGreen('led_green'),
   ledBlue('led_blue'),
@@ -62,6 +63,7 @@ enum TerminalCommand {
       case TerminalCommand.erro:
       case TerminalCommand.docinho:
       case TerminalCommand.led:
+      case TerminalCommand.aberturaConta:
       case TerminalCommand.ledRed:
       case TerminalCommand.ledGreen:
       case TerminalCommand.ledBlue:
@@ -105,6 +107,7 @@ enum TerminalCommand {
       case TerminalCommand.protecaoCartao:
       case TerminalCommand.assistenciaResidencial:
       case TerminalCommand.seguroCelular:
+      case TerminalCommand.aberturaConta:
       case TerminalCommand.ledOff:
       case TerminalCommand.ledLoading:
         return null;
@@ -267,6 +270,16 @@ enum TerminalCommand {
       case 'contratar_seguro_celular':
       case 'show_seguro_celular':
         return TerminalCommand.seguroCelular;
+
+      case 'abertura_conta':
+      case 'abrir_conta':
+      case 'conta':
+      case 'nova_conta':
+      case 'jornada_abertura_conta':
+      case 'jornada_conta':
+      case 'show_abertura_conta':
+      case 'show_abrir_conta':
+        return TerminalCommand.aberturaConta;
 
       case 'led_red':
       case 'led_vermelho':
@@ -558,6 +571,7 @@ class TerminalCommandService {
         'SHOW_ASSISTENCIA_RESIDENCIAL',
         'SHOW_PROTECAO_RESIDENCIAL',
         'SHOW_SEGURO_CELULAR',
+        'SHOW_ABERTURA_CONTA',
         'standby',
         'cartao',
         'senha',
@@ -580,6 +594,8 @@ class TerminalCommandService {
         'assistencia_residencial',
         'protecao_residencial',
         'seguro_celular',
+        'abertura_conta',
+        'abrir_conta',
         'led_red',
         'led_green',
         'led_blue',
