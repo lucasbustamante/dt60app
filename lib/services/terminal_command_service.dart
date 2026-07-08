@@ -25,6 +25,7 @@ enum TerminalCommand {
   assistenciaResidencial('assistencia_residencial'),
   seguroCelular('seguro_celular'),
   aberturaConta('abertura_conta'),
+  creditoConsignado('credito_consignado'),
   ledRed('led_red'),
   ledGreen('led_green'),
   ledBlue('led_blue'),
@@ -52,6 +53,8 @@ enum TerminalCommand {
         return BankProductKind.homeAssistance;
       case TerminalCommand.seguroCelular:
         return BankProductKind.phoneInsurance;
+      case TerminalCommand.creditoConsignado:
+        return BankProductKind.payrollLoan;
       case TerminalCommand.standby:
       case TerminalCommand.cartao:
       case TerminalCommand.senha:
@@ -108,6 +111,7 @@ enum TerminalCommand {
       case TerminalCommand.assistenciaResidencial:
       case TerminalCommand.seguroCelular:
       case TerminalCommand.aberturaConta:
+      case TerminalCommand.creditoConsignado:
       case TerminalCommand.ledOff:
       case TerminalCommand.ledLoading:
         return null;
@@ -280,6 +284,19 @@ enum TerminalCommand {
       case 'show_abertura_conta':
       case 'show_abrir_conta':
         return TerminalCommand.aberturaConta;
+
+      case 'credito_consignado':
+      case 'credito_consiguinado':
+      case 'consignado':
+      case 'consiguinado':
+      case 'emprestimo_consignado':
+      case 'credito':
+      case 'jornada_credito_consignado':
+      case 'jornada_credito_consiguinado':
+      case 'contratar_credito_consignado':
+      case 'show_credito_consignado':
+      case 'show_credito_consiguinado':
+        return TerminalCommand.creditoConsignado;
 
       case 'led_red':
       case 'led_vermelho':
@@ -572,6 +589,7 @@ class TerminalCommandService {
         'SHOW_PROTECAO_RESIDENCIAL',
         'SHOW_SEGURO_CELULAR',
         'SHOW_ABERTURA_CONTA',
+        'SHOW_CREDITO_CONSIGNADO',
         'standby',
         'cartao',
         'senha',
@@ -596,6 +614,9 @@ class TerminalCommandService {
         'seguro_celular',
         'abertura_conta',
         'abrir_conta',
+        'credito_consignado',
+        'credito_consiguinado',
+        'consignado',
         'led_red',
         'led_green',
         'led_blue',

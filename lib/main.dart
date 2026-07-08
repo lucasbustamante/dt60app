@@ -11,6 +11,7 @@ import 'screens/error_screen.dart';
 import 'screens/face_biometry_screen.dart';
 import 'screens/fingerprint_biometry_screen.dart';
 import 'screens/contactless_card_screen.dart';
+import 'screens/credit_consigned_screen.dart';
 import 'screens/insert_card_screen.dart';
 import 'screens/led_test_screen.dart';
 import 'screens/password_screen.dart';
@@ -56,6 +57,7 @@ class AppRoutes {
   static const led = '/led';
   static const productOffer = '/oferta-produto';
   static const accountOpening = '/abertura-conta';
+  static const creditConsigned = '/credito-consignado';
 }
 
 class PinpadTerminalApp extends StatefulWidget {
@@ -96,6 +98,15 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
 
     if (command == TerminalCommand.ledLoading) {
       unawaited(CardReaderService.instance.playFixedLedLoading());
+      return;
+    }
+
+    if (command == TerminalCommand.creditoConsignado) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final navigator = _navigatorKey.currentState;
+        if (navigator == null) return;
+        navigator.pushNamedAndRemoveUntil(AppRoutes.creditConsigned, (_) => false);
+      });
       return;
     }
 
@@ -163,6 +174,7 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
       case TerminalCommand.assistenciaResidencial:
       case TerminalCommand.seguroCelular:
       case TerminalCommand.aberturaConta:
+      case TerminalCommand.creditoConsignado:
       case TerminalCommand.ledRed:
       case TerminalCommand.ledGreen:
       case TerminalCommand.ledBlue:
@@ -197,6 +209,7 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
         AppRoutes.docinho: (_) => const DocinhoScreen(),
         AppRoutes.led: (_) => const LedTestScreen(),
         AppRoutes.accountOpening: (_) => const AccountOpeningScreen(),
+        AppRoutes.creditConsigned: (_) => const CreditConsignedScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == AppRoutes.productOffer) {

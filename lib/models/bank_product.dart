@@ -7,6 +7,7 @@ enum BankProductKind {
   cardProtection,
   homeAssistance,
   phoneInsurance,
+  payrollLoan,
 }
 
 enum PaymentMethod {
@@ -224,6 +225,24 @@ class BankProductCatalog {
       icon: Icons.phone_iphone_outlined,
       paymentMethod: PaymentMethod.magneticStripe,
       authenticationMethod: AuthenticationMethod.fingerprintBiometry,
+    ),
+
+    BankProduct(
+      kind: BankProductKind.payrollLoan,
+      title: 'Crédito Consignado',
+      shortTitle: 'Crédito Consignado',
+      description:
+          'Simulação de crédito consignado com contratação assistida no terminal.',
+      estimatedValue: 'R\$ 500.000,00',
+      benefits: [
+        'Valor contratado de R\$ 500.000,00',
+        'Pagamento em 96 parcelas',
+        'Parcela estimada de R\$ 7.245,90',
+        'Taxa mensal simulada de 1,49% a.m.',
+      ],
+      icon: Icons.account_balance_wallet_outlined,
+      paymentMethod: PaymentMethod.nfc,
+      authenticationMethod: AuthenticationMethod.faceBiometry,
     ),
   ];
 
