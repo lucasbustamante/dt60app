@@ -68,6 +68,7 @@ class _FaceScannerState extends State<_FaceScanner>
   Map<dynamic, dynamic>? _cameraDiagnostics;
   Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
+  AccountOpeningStepArgs? _accountOpeningStepArgs;
   bool _autoAdvanceConfigured = false;
 
   @override
@@ -88,6 +89,16 @@ class _FaceScannerState extends State<_FaceScanner>
     if (_autoAdvanceConfigured) return;
 
     final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is AccountOpeningStepArgs) {
+      _accountOpeningStepArgs = arguments;
+      _autoAdvanceConfigured = true;
+      _autoAdvanceTimer = Timer(
+        const Duration(milliseconds: 4200),
+        _finishAccountOpeningStep,
+      );
+      return;
+    }
+
     if (arguments is! ProductJourneySession) return;
 
     _journeySession = arguments;
@@ -104,6 +115,17 @@ class _FaceScannerState extends State<_FaceScanner>
       JourneyFlow.processingRoute,
       (_) => false,
       arguments: _journeySession,
+    );
+  }
+
+  void _finishAccountOpeningStep() {
+    if (!mounted) return;
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep == null) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      accountStep.nextRoute,
+      (_) => false,
+      arguments: accountStep.nextArguments,
     );
   }
 

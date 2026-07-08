@@ -59,3 +59,13 @@ class JourneyFlow {
     };
   }
 }
+
+class AccountOpeningStepArgs {
+  const AccountOpeningStepArgs({
+    required this.nextRoute,
+    this.nextArguments,
+  });
+
+  final String nextRoute;
+  final Object? nextArguments;
+}

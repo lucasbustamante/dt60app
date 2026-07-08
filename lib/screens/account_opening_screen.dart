@@ -10,6 +10,8 @@ import '../theme/app_theme.dart';
 import '../widgets/app_frame.dart';
 import '../widgets/numeric_keyboard.dart';
 
+const accountOpeningResumeLoading = 'account_opening_resume_loading';
+
 enum _AccountStage {
   info,
   confirmation,
@@ -50,6 +52,15 @@ class _AccountOpeningScreenState extends State<AccountOpeningScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments == accountOpeningResumeLoading && _stage != _AccountStage.loading) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _goTo(_AccountStage.loading));
+    }
   }
 
   @override
@@ -100,6 +111,23 @@ class _AccountOpeningScreenState extends State<AccountOpeningScreen>
       case _AccountStage.qr:
         break;
     }
+  }
+
+  void _startCredentialFlow() {
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      JourneyFlow.fingerprintBiometryRoute,
+      (_) => false,
+      arguments: AccountOpeningStepArgs(
+        nextRoute: JourneyFlow.passwordRoute,
+        nextArguments: AccountOpeningStepArgs(
+          nextRoute: JourneyFlow.faceBiometryRoute,
+          nextArguments: const AccountOpeningStepArgs(
+            nextRoute: '/abertura-conta',
+            nextArguments: accountOpeningResumeLoading,
+          ),
+        ),
+      ),
+    );
   }
 
   void _cancel() {
@@ -203,7 +231,7 @@ class _AccountOpeningScreenState extends State<AccountOpeningScreen>
       case _AccountStage.confirmation:
         return _ConfirmationStage(
           key: const ValueKey('confirmation'),
-          onConfirm: () => _goTo(_AccountStage.fingerprint),
+          onConfirm: _startCredentialFlow,
           onCancel: _cancel,
         );
       case _AccountStage.fingerprint:

@@ -87,6 +87,16 @@ class _PasswordScreenState extends State<PasswordScreen> {
     if (_pin.length != 4 || _leaving) return;
     _leaving = true;
     _focusTimer?.cancel();
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep != null) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        accountStep.nextRoute,
+        (_) => false,
+        arguments: accountStep.nextArguments,
+      );
+      return;
+    }
+
     final session = _journeySession;
     final nextRoute = session == null
         ? JourneyFlow.successRoute
@@ -111,6 +121,11 @@ class _PasswordScreenState extends State<PasswordScreen> {
   ProductJourneySession? get _journeySession {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     return arguments is ProductJourneySession ? arguments : null;
+  }
+
+  AccountOpeningStepArgs? get _accountOpeningStepArgs {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    return arguments is AccountOpeningStepArgs ? arguments : null;
   }
 
   void _handleKey(KeyEvent event) {

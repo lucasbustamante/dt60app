@@ -21,6 +21,7 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   StreamSubscription<CardReaderEvent>? _subscription;
   Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
+  AccountOpeningStepArgs? _accountOpeningStepArgs;
   bool _configured = false;
   bool _fingerprintDetectionStarted = false;
   bool _goingToPassword = false;
@@ -30,7 +31,9 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     super.initState();
     _subscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.fingerprintDetected) {
-        if (_journeySession == null) {
+        if (_accountOpeningStepArgs != null) {
+          _finishAccountOpeningStep();
+        } else if (_journeySession == null) {
           _goToPassword();
         } else {
           _finishProductJourney();
@@ -46,6 +49,16 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
 
     _configured = true;
     final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is AccountOpeningStepArgs) {
+      _accountOpeningStepArgs = arguments;
+      unawaited(CardReaderService.instance.setStatusLed('blue'));
+      _autoAdvanceTimer = Timer(
+        const Duration(milliseconds: 3600),
+        _finishAccountOpeningStep,
+      );
+      return;
+    }
+
     if (arguments is ProductJourneySession) {
       _journeySession = arguments;
       _autoAdvanceTimer = Timer(
@@ -86,6 +99,19 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
       JourneyFlow.processingRoute,
       (_) => false,
       arguments: _journeySession,
+    );
+  }
+
+  void _finishAccountOpeningStep() {
+    if (!mounted || _goingToPassword) return;
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep == null) return;
+    _goingToPassword = true;
+    _autoAdvanceTimer?.cancel();
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      accountStep.nextRoute,
+      (_) => false,
+      arguments: accountStep.nextArguments,
     );
   }
 
