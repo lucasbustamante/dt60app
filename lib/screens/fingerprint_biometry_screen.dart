@@ -115,6 +115,37 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     );
   }
 
+  List<InlineSpan> get _fingerprintMessageSpans {
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep != null && accountStep.messageHighlight != null) {
+      return [
+        TextSpan(text: accountStep.messageStart ?? ''),
+        TextSpan(
+          text: accountStep.messageHighlight,
+          style: const TextStyle(
+            color: AppColors.orange,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+        TextSpan(text: accountStep.messageEnd ?? ''),
+      ];
+    }
+
+    return const [
+      TextSpan(text: 'Coloque o dedo no '),
+      TextSpan(
+        text: 'sensor de biometria',
+        style: TextStyle(
+          color: AppColors.orange,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
+      ),
+      TextSpan(text: '\ne aguarde a leitura.'),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppFrame(
@@ -125,20 +156,9 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 430),
-              child: const InstructionPanel(
-                title: 'Biometria\ndigital',
-                messageSpans: [
-                  TextSpan(text: 'Coloque o dedo no '),
-                  TextSpan(
-                    text: 'sensor de biometria',
-                    style: TextStyle(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  TextSpan(text: '\ne aguarde a leitura.'),
-                ],
+              child: InstructionPanel(
+                title: _accountOpeningStepArgs?.title ?? 'Biometria\ndigital',
+                messageSpans: _fingerprintMessageSpans,
               ),
             ),
           ),
@@ -148,6 +168,7 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     );
   }
 }
+
 
 class _FingerprintAnimation extends StatefulWidget {
   const _FingerprintAnimation();

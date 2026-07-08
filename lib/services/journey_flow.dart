@@ -64,8 +64,20 @@ class AccountOpeningStepArgs {
   const AccountOpeningStepArgs({
     required this.nextRoute,
     this.nextArguments,
+    this.title,
+    this.messageStart,
+    this.messageHighlight,
+    this.messageEnd,
+    this.panelTitle,
+    this.requirePasswordConfirmation = false,
   });
 
   final String nextRoute;
   final Object? nextArguments;
+  final String? title;
+  final String? messageStart;
+  final String? messageHighlight;
+  final String? messageEnd;
+  final String? panelTitle;
+  final bool requirePasswordConfirmation;
 }

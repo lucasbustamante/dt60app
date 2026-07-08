@@ -15,6 +15,8 @@ class AppColors {
   static const success = Color(0xFF16A34A);
   static const danger = Color(0xFFE03131);
   static const warning = Color(0xFFF59E0B);
+
+  static get textSoft => null;
 }
 
 class AppTextStyles {

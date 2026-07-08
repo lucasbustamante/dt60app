@@ -22,6 +22,8 @@ class _PasswordScreenState extends State<PasswordScreen> {
   StreamSubscription<CardReaderEvent>? _pinpadSubscription;
   Timer? _focusTimer;
   String _pin = '';
+  String? _firstRegistrationPin;
+  String? _registrationError;
   bool _leaving = false;
 
   @override
@@ -76,18 +78,39 @@ class _PasswordScreenState extends State<PasswordScreen> {
   }
 
   void _clear() {
-    if (_pin.isEmpty) return;
+    if (_pin.isEmpty && _registrationError == null) return;
 
     setState(() {
       _pin = '';
+      _registrationError = null;
     });
   }
 
   void _confirm() {
     if (_pin.length != 4 || _leaving) return;
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep != null && accountStep.requirePasswordConfirmation) {
+      if (_firstRegistrationPin == null) {
+        setState(() {
+          _firstRegistrationPin = _pin;
+          _pin = '';
+          _registrationError = null;
+        });
+        return;
+      }
+
+      if (_pin != _firstRegistrationPin) {
+        setState(() {
+          _pin = '';
+          _firstRegistrationPin = null;
+          _registrationError = 'As senhas não conferem. Cadastre novamente.';
+        });
+        return;
+      }
+    }
+
     _leaving = true;
     _focusTimer?.cancel();
-    final accountStep = _accountOpeningStepArgs;
     if (accountStep != null) {
       Navigator.of(context).pushNamedAndRemoveUntil(
         accountStep.nextRoute,
@@ -205,6 +228,59 @@ class _PasswordScreenState extends State<PasswordScreen> {
     }
   }
 
+  String get _passwordScreenTitle {
+    final accountStep = _accountOpeningStepArgs;
+    return accountStep?.title ?? 'Digite\na senha';
+  }
+
+  List<InlineSpan> get _passwordMessageSpans {
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep != null && accountStep.messageHighlight != null) {
+      return [
+        TextSpan(text: accountStep.messageStart ?? ''),
+        TextSpan(
+          text: accountStep.messageHighlight,
+          style: const TextStyle(
+            color: AppColors.orange,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+        TextSpan(text: accountStep.messageEnd ?? ''),
+      ];
+    }
+
+    return const [
+      TextSpan(text: 'Digite sua senha no '),
+      TextSpan(
+        text: 'teclado físico',
+        style: TextStyle(
+          color: AppColors.orange,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
+      ),
+      TextSpan(text: '\ndo pinpad para continuar.'),
+    ];
+  }
+
+  String get _passwordPanelTitle {
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep?.requirePasswordConfirmation == true &&
+        _firstRegistrationPin != null) {
+      return 'Confirme sua senha';
+    }
+    return accountStep?.panelTitle ?? 'Digite sua senha';
+  }
+
+  String? get _passwordHelperText {
+    final accountStep = _accountOpeningStepArgs;
+    if (accountStep?.requirePasswordConfirmation != true) return null;
+    return _firstRegistrationPin == null
+        ? 'Digite a senha de 4 dígitos.'
+        : 'Digite novamente a mesma senha.';
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -227,20 +303,9 @@ class _PasswordScreenState extends State<PasswordScreen> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 430),
-                    child: const InstructionPanel(
-                      title: 'Digite\na senha',
-                      messageSpans: [
-                        TextSpan(text: 'Digite sua senha no '),
-                        TextSpan(
-                          text: 'teclado físico',
-                          style: TextStyle(
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                        TextSpan(text: '\ndo pinpad para continuar.'),
-                      ],
+                    child: InstructionPanel(
+                      title: _passwordScreenTitle,
+                      messageSpans: _passwordMessageSpans,
                       helpText: 'Toque aqui para falar',
                       helpSubtitle: 'com nosso atendimento.',
                     ),
@@ -249,6 +314,9 @@ class _PasswordScreenState extends State<PasswordScreen> {
               ),
               right: _PasswordPanel(
                 pin: _pin,
+                title: _passwordPanelTitle,
+                helperText: _passwordHelperText,
+                errorText: _registrationError,
                 onCancel: _cancel,
                 onConfirm: _confirm,
                 onClear: _clear,
@@ -264,12 +332,18 @@ class _PasswordScreenState extends State<PasswordScreen> {
 class _PasswordPanel extends StatelessWidget {
   const _PasswordPanel({
     required this.pin,
+    required this.title,
+    this.helperText,
+    this.errorText,
     required this.onCancel,
     required this.onConfirm,
     required this.onClear,
   });
 
   final String pin;
+  final String title;
+  final String? helperText;
+  final String? errorText;
   final VoidCallback onCancel;
   final VoidCallback onConfirm;
   final VoidCallback onClear;
@@ -305,7 +379,7 @@ class _PasswordPanel extends StatelessWidget {
               ),
               SizedBox(height: ultraDense ? 8 : (dense ? 12 : 26)),
               Text(
-                'Digite sua senha',
+                title,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.text,
@@ -314,6 +388,21 @@ class _PasswordPanel extends StatelessWidget {
                   letterSpacing: 0,
                 ),
               ),
+              if (helperText != null || errorText != null) ...[
+                SizedBox(height: ultraDense ? 4 : 8),
+                Text(
+                  errorText ?? helperText!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: errorText == null
+                        ? AppColors.textSoft
+                        : Colors.red.shade700,
+                    fontSize: ultraDense ? 11 : (dense ? 12 : 14),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
               SizedBox(height: ultraDense ? 8 : (dense ? 12 : 26)),
               _PinBoxes(
                 pinLength: pin.length,

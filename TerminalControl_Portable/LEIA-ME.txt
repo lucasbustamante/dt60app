@@ -1,0 +1,17 @@
+Terminal Control - Launcher atualizado
+
+Como usar:
+1. Mantenha a pasta platform-tools na mesma pasta do TerminalControlLauncher.exe.
+2. Execute TerminalControlLauncher.exe.
+3. O programa aplica automaticamente: adb forward tcp:8787 tcp:8787.
+4. A interface abre em: http://127.0.0.1:8788
+
+Alterações aplicadas:
+- Layout atualizado.
+- Removidos subtítulos das jornadas/produtos.
+- Mantidas as tecnologias de cada jornada.
+- Status sem contorno, apenas texto.
+- Botões com aparência mais clara de botão.
+- Área de TI com senha 123456.
+- Botão para desativar/ativar os botões da Área de TI.
+- ADB externo, dentro da pasta platform-tools, não embutido no EXE.

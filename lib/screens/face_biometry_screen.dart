@@ -16,6 +16,9 @@ class FaceBiometryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    final accountStep = arguments is AccountOpeningStepArgs ? arguments : null;
+
     return AppFrame(
       activeStep: 1,
       child: ResponsiveTwoPane(
@@ -24,20 +27,9 @@ class FaceBiometryScreen extends StatelessWidget {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 430),
-              child: const InstructionPanel(
-                title: 'Biometria\nfacial',
-                messageSpans: [
-                  TextSpan(text: 'Para sua segurança,\n'),
-                  TextSpan(
-                    text: 'posicione seu rosto',
-                    style: TextStyle(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0,
-                    ),
-                  ),
-                  TextSpan(text: ' na moldura\ne aguarde a captura.'),
-                ],
+              child: InstructionPanel(
+                title: accountStep?.title ?? 'Biometria\nfacial',
+                messageSpans: _messageSpans(accountStep),
               ),
             ),
           ),
@@ -45,6 +37,36 @@ class FaceBiometryScreen extends StatelessWidget {
         right: const _FaceScanner(),
       ),
     );
+  }
+
+  List<InlineSpan> _messageSpans(AccountOpeningStepArgs? accountStep) {
+    if (accountStep != null && accountStep.messageHighlight != null) {
+      return [
+        TextSpan(text: accountStep.messageStart ?? ''),
+        TextSpan(
+          text: accountStep.messageHighlight,
+          style: const TextStyle(
+            color: AppColors.orange,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0,
+          ),
+        ),
+        TextSpan(text: accountStep.messageEnd ?? ''),
+      ];
+    }
+
+    return const [
+      TextSpan(text: 'Para sua segurança,\n'),
+      TextSpan(
+        text: 'posicione seu rosto',
+        style: TextStyle(
+          color: AppColors.orange,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
+      ),
+      TextSpan(text: ' na moldura\ne aguarde a captura.'),
+    ];
   }
 }
 
