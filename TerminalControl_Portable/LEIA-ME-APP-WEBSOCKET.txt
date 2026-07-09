@@ -1,0 +1,38 @@
+Terminal Control + aplicativo Nova Pasta
+
+O TerminalControlLauncher.exe original foi mantido sem alteração.
+Layout, cores e funcionalidades do Terminal Control continuam iguais.
+
+O que foi adicionado:
+- TerminalControlWebSocketBridge.exe
+- Iniciar_TerminalControl_COM_APP.bat
+
+Como usar:
+1. Execute Iniciar_TerminalControl_COM_APP.bat.
+2. Ele abre o Terminal Control original.
+3. Ele inicia a ponte WebSocket para o aplicativo.
+4. Na janela preta, copie os dados mostrados:
+   IP:    IP da sua máquina
+   Porta: 8790
+5. No aplicativo, coloque:
+   IP = o IP mostrado
+   Porta = 8790
+6. Toque em Conectar no aplicativo.
+
+URL WebSocket usada pelo app:
+ws://IP_DA_MAQUINA:8790/ws
+
+Observações:
+- O celular/tablet e o computador precisam estar na mesma rede Wi-Fi/cabo.
+- Se não conectar, libere a porta 8790 no Firewall do Windows.
+- A ponte encaminha os comandos recebidos para o Terminal Control original.
+- O ADB continua externo dentro da pasta platform-tools.
+
+Comandos aceitos:
+O app envia JSON no formato:
+{"command":"standby"}
+{"command":"seguro_pet"}
+{"command":"abertura_conta"}
+
+A ponte também aceita texto puro, por exemplo:
+standby
