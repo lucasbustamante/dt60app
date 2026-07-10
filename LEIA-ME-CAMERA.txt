@@ -1,0 +1,14 @@
+CORREÇÃO DA CÂMERA FRONTAL
+
+Esta versão usa o backend CameraX recomendado pelo Flutter.
+O app agora só considera uma câmera ativa depois que recebe um quadro real.
+
+IMPORTANTE AO ATUALIZAR:
+1. Substitua os arquivos do projeto.
+2. Execute: flutter clean
+3. Apague, se existir: pubspec.lock
+4. Execute: flutter pub get
+5. Desinstale a versão antiga do aplicativo do aparelho.
+6. Gere e instale novamente o APK.
+
+A chamada única mantém o seletor de câmera. As jornadas não foram alteradas.

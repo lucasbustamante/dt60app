@@ -78,7 +78,7 @@ class _FaceScanner extends StatefulWidget {
 }
 
 class _FaceScannerState extends State<_FaceScanner>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const MethodChannel _permissionChannel = MethodChannel(
     'pinpad_terminal/permissions',
   );
@@ -88,6 +88,8 @@ class _FaceScannerState extends State<_FaceScanner>
   String? _cameraError;
   String? _cameraStatus;
   Map<dynamic, dynamic>? _cameraDiagnostics;
+  CameraDescription? _selectedCamera;
+  bool _switchingCamera = false;
   Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
   AccountOpeningStepArgs? _accountOpeningStepArgs;
@@ -96,6 +98,7 @@ class _FaceScannerState extends State<_FaceScanner>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scanController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2100),
@@ -151,65 +154,182 @@ class _FaceScannerState extends State<_FaceScanner>
     );
   }
 
-  Future<void> _startCamera() async {
+  Future<void> _startCamera({CameraDescription? selectedCamera}) async {
+    final oldController = _cameraController;
+    _cameraController = null;
+
+    if (oldController != null) {
+      try {
+        if (oldController.value.isStreamingImages) {
+          await oldController.stopImageStream();
+        }
+      } catch (_) {}
+      try {
+        await oldController.dispose();
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+    }
+
+    if (mounted) {
+      setState(() {
+        _cameraError = null;
+        _cameraStatus = 'Procurando câmeras...';
+      });
+    }
+
     try {
-      final granted = await _permissionChannel.invokeMethod<bool>(
-            'requestCameraPermission',
-          ) ??
-          false;
-      if (!granted) {
-        _cameraError = 'Permissão da câmera negada';
-        if (mounted) setState(() {});
-        return;
+      // O plugin camera solicita a permissão durante initialize(). O canal
+      // nativo é mantido apenas para compatibilidade com o terminal original.
+      try {
+        await _permissionChannel.invokeMethod<bool>('requestCameraPermission');
+      } on MissingPluginException {
+        // Projeto Flutter padrão: initialize() cuidará da permissão.
+      } catch (_) {
+        // Não bloqueie a câmera por falha no canal auxiliar.
       }
 
       final diagnostics = await _loadCameraDiagnostics();
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        _cameraError =
-            'Nenhuma câmera encontrada. ${_formatCameraDiagnostics(diagnostics)}';
-        if (mounted) setState(() {});
-        return;
+        throw CameraException('NoCamera', 'Nenhuma câmera encontrada');
       }
 
       final orderedCameras = _orderedCameras(cameras, diagnostics);
-      final attempts = <String>[];
+      final frontalCameras = orderedCameras
+          .where((camera) => camera.lensDirection == CameraLensDirection.front)
+          .toList();
+      if (frontalCameras.isEmpty) {
+        throw CameraException(
+          'NoFrontCamera',
+          'Nenhuma câmera frontal foi encontrada neste aparelho',
+        );
+      }
 
-      for (final camera in orderedCameras) {
-        for (final preset in const [
-          ResolutionPreset.low,
+      final camerasToTry = selectedCamera != null &&
+              selectedCamera.lensDirection == CameraLensDirection.front
+          ? <CameraDescription>[
+              selectedCamera,
+              ...frontalCameras.where((c) => c.name != selectedCamera.name),
+            ]
+          : frontalCameras;
+
+      final attempts = <String>[];
+      for (final camera in camerasToTry) {
+        // Medium primeiro costuma ser o perfil mais compatível. Low pode
+        // selecionar um stream incompatível em câmeras frontais integradas.
+        for (final preset in const <ResolutionPreset>[
           ResolutionPreset.medium,
+          ResolutionPreset.low,
+          ResolutionPreset.high,
         ]) {
           final controller = CameraController(
             camera,
             preset,
             enableAudio: false,
+            imageFormatGroup: ImageFormatGroup.yuv420,
           );
 
           try {
-            await controller.initialize().timeout(const Duration(seconds: 6));
+            _cameraStatus =
+                'Abrindo ${_cameraLabel(camera)} (${preset.name})...';
+            if (mounted) setState(() {});
+
+            await controller.initialize().timeout(const Duration(seconds: 12));
+            await Future<void>.delayed(const Duration(milliseconds: 500));
+
+            // Não confie apenas em isInitialized: neste aparelho a câmera
+            // frontal inicializava, mas não entregava nenhum quadro.
+            final hasFrame = await _waitForCameraFrame(controller);
+            if (!hasFrame) {
+              throw CameraException(
+                'NoFrames',
+                'A câmera abriu, mas não entregou imagem',
+              );
+            }
+
+            try {
+              await controller.lockCaptureOrientation(
+                DeviceOrientation.landscapeLeft,
+              );
+            } catch (_) {}
+            try {
+              await controller.setFlashMode(FlashMode.off);
+            } catch (_) {}
+
+            if (!mounted) {
+              await controller.dispose();
+              return;
+            }
+
             _cameraController = controller;
+            _selectedCamera = camera;
             _cameraError = null;
             _cameraStatus =
-                'Câmera ${camera.name} ativa (${camera.lensDirection.name}, ${preset.name})';
-            if (mounted) setState(() {});
+                '${_cameraLabel(camera)} ativa • imagem confirmada • ${preset.name}';
+            setState(() {});
             return;
           } catch (error) {
             attempts.add(
               '${camera.name}/${camera.lensDirection.name}/${preset.name}: $error',
             );
-            await controller.dispose();
+            try {
+              if (controller.value.isStreamingImages) {
+                await controller.stopImageStream();
+              }
+            } catch (_) {}
+            try {
+              await controller.dispose();
+            } catch (_) {}
+            await Future<void>.delayed(const Duration(milliseconds: 450));
           }
         }
       }
 
       _cameraError =
-          'Não foi possível abrir a câmera. Tentativas: ${attempts.take(4).join(' | ')}. ${_formatCameraDiagnostics(diagnostics)}';
+          'Nenhuma câmera entregou imagem. ${attempts.take(6).join(' | ')}';
+      _cameraStatus = null;
+      if (mounted) setState(() {});
+    } on CameraException catch (error) {
+      _cameraError = 'Câmera: ${error.code} — ${error.description ?? error}';
+      _cameraStatus = null;
       if (mounted) setState(() {});
     } catch (error) {
-      _cameraError =
-          'Erro ao iniciar câmera: $error. ${_formatCameraDiagnostics(_cameraDiagnostics)}';
+      _cameraError = 'Erro ao iniciar câmera: $error';
+      _cameraStatus = null;
       if (mounted) setState(() {});
+    }
+  }
+
+  Future<bool> _waitForCameraFrame(CameraController controller) async {
+    final completer = Completer<bool>();
+    Timer? timeout;
+
+    try {
+      timeout = Timer(const Duration(seconds: 4), () {
+        if (!completer.isCompleted) completer.complete(false);
+      });
+
+      await controller.startImageStream((CameraImage image) {
+        if (!completer.isCompleted && image.width > 0 && image.height > 0) {
+          completer.complete(true);
+        }
+      });
+
+      final result = await completer.future;
+      timeout.cancel();
+      try {
+        await controller.stopImageStream();
+      } catch (_) {}
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+      return result;
+    } catch (_) {
+      timeout?.cancel();
+      try {
+        if (controller.value.isStreamingImages) {
+          await controller.stopImageStream();
+        }
+      } catch (_) {}
+      return false;
     }
   }
 
@@ -241,14 +361,14 @@ class _FaceScannerState extends State<_FaceScanner>
   int _cameraScore(CameraDescription camera, String? nativeBest) {
     final name = camera.name.toLowerCase();
     var score = 0;
-    if (nativeBest != null && camera.name == nativeBest) score += 120;
-    if (camera.lensDirection == CameraLensDirection.external) score += 100;
+    // A biometria facial usa exclusivamente as câmeras frontais.
+    if (camera.lensDirection == CameraLensDirection.front) score += 1000;
     if (name.contains('usb') ||
         name.contains('external') ||
         name.contains('uvc')) {
-      score += 80;
+      score += 20;
     }
-    if (camera.lensDirection == CameraLensDirection.front) score += 40;
+    if (nativeBest != null && camera.name == nativeBest) score += 10;
     return score;
   }
 
@@ -269,8 +389,48 @@ class _FaceScannerState extends State<_FaceScanner>
     return 'Android: $cameraCount câmera(s), USB vídeo: $usbVideoCount, externa: ${externalFeature ? 'sim' : 'não'}, preferida: ${best ?? '-'}';
   }
 
+  String _cameraLabel(CameraDescription camera) {
+    final direction = switch (camera.lensDirection) {
+      CameraLensDirection.front => 'frontal',
+      CameraLensDirection.back => 'traseira',
+      CameraLensDirection.external => 'externa',
+    };
+    return '${camera.name} ($direction)';
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _cameraController;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _cameraController = null;
+      unawaited(controller.dispose());
+    } else if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {
+        _cameraStatus = 'Reabrindo câmera...';
+        _cameraInit = _startCamera(selectedCamera: _selectedCamera);
+      });
+    }
+  }
+
+  Future<void> _restartCamera() async {
+    if (_switchingCamera) return;
+    setState(() {
+      _switchingCamera = true;
+      _cameraError = null;
+      _cameraStatus = 'Reiniciando e validando imagem...';
+      _cameraInit = _startCamera(selectedCamera: _selectedCamera);
+    });
+    await _cameraInit;
+    if (mounted) setState(() => _switchingCamera = false);
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoAdvanceTimer?.cancel();
     unawaited(CardReaderService.instance.stopFaceLedBlink());
     _scanController.dispose();
@@ -281,7 +441,7 @@ class _FaceScannerState extends State<_FaceScanner>
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 470),
+      constraints: const BoxConstraints(maxWidth: 560),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final mediaHeight = MediaQuery.sizeOf(context).height;
@@ -293,15 +453,15 @@ class _FaceScannerState extends State<_FaceScanner>
               : mediaHeight;
 
           final scannerSize = miniLandscape
-              ? (availableHeight * 0.66).clamp(150.0, 205.0).toDouble()
+              ? (availableHeight * 0.78).clamp(180.0, 245.0).toDouble()
               : (dense
-                  ? (availableHeight * 0.68).clamp(190.0, 255.0).toDouble()
-                  : 390.0);
+                  ? (availableHeight * 0.78).clamp(220.0, 315.0).toDouble()
+                  : 440.0);
 
-          final portraitSize = scannerSize * 0.82;
-          final ringSize = scannerSize * 0.92;
-          final scanTopStart = scannerSize * 0.23;
-          final scanTravel = scannerSize * 0.5;
+          final portraitSize = scannerSize * 0.88;
+          final ringSize = scannerSize * 0.98;
+          final scanTopStart = scannerSize * 0.18;
+          final scanTravel = scannerSize * 0.58;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -434,13 +594,37 @@ class _CameraPreviewOrFallback extends StatelessWidget {
             current != null &&
             current.value.isInitialized &&
             snapshot.connectionState == ConnectionState.done) {
-          return FittedBox(
-            fit: BoxFit.cover,
-            child: SizedBox(
-              width: current.value.previewSize?.height ?? 240,
-              height: current.value.previewSize?.width ?? 240,
-              child: CameraPreview(current),
-            ),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final targetAspect =
+                  constraints.maxWidth / constraints.maxHeight;
+              final previewAspect = current.value.aspectRatio;
+              final scale = math.max(
+                previewAspect / targetAspect,
+                targetAspect / previewAspect,
+              );
+
+              // O preview conserva sua proporção original e é ampliado apenas
+              // o necessário para preencher a moldura, com recorte central.
+              // Assim o rosto não fica estreito nem alargado.
+              return ClipRect(
+                child: Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.center,
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: previewAspect,
+                      child: CameraPreview(
+                        current,
+                        key: ValueKey<String>(
+                          '${current.description.name}-${current.value.previewSize}',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         }
 
@@ -473,7 +657,7 @@ class _CornerSet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = mini ? 24.0 : (dense ? 32.0 : 48.0);
-    final pos = scannerSize * 0.18;
+    final pos = scannerSize * 0.13;
     return Stack(
       children: [
         Positioned(

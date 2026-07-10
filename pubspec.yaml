@@ -10,8 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  camera: ^0.11.0+2
-  camera_android: ^0.10.10+18
+  camera: ^0.11.4
 
 dev_dependencies:
   flutter_test:
