@@ -33,7 +33,9 @@ enum TerminalCommand {
   ledPurple('led_purple'),
   ledWhite('led_white'),
   ledOff('led_off'),
-  ledLoading('led_loading');
+  ledLoading('led_loading'),
+  confirmFace('confirm_face'),
+  confirmFingerprint('confirm_fingerprint');
 
   const TerminalCommand(this.value);
 
@@ -75,6 +77,8 @@ enum TerminalCommand {
       case TerminalCommand.ledWhite:
       case TerminalCommand.ledOff:
       case TerminalCommand.ledLoading:
+      case TerminalCommand.confirmFace:
+      case TerminalCommand.confirmFingerprint:
         return null;
     }
   }
@@ -114,6 +118,8 @@ enum TerminalCommand {
       case TerminalCommand.creditoConsignado:
       case TerminalCommand.ledOff:
       case TerminalCommand.ledLoading:
+      case TerminalCommand.confirmFace:
+      case TerminalCommand.confirmFingerprint:
         return null;
     }
   }
@@ -297,6 +303,16 @@ enum TerminalCommand {
       case 'show_credito_consignado':
       case 'show_credito_consiguinado':
         return TerminalCommand.creditoConsignado;
+
+      case 'confirm_face':
+      case 'confirmar_facial':
+      case 'facial_ok':
+        return TerminalCommand.confirmFace;
+
+      case 'confirm_fingerprint':
+      case 'confirmar_digital':
+      case 'digital_ok':
+        return TerminalCommand.confirmFingerprint;
 
       case 'led_red':
       case 'led_vermelho':

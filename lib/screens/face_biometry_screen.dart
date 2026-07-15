@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/bank_product.dart';
+import '../services/biometry_confirmation_service.dart';
 import '../services/card_reader_service.dart';
 import '../services/journey_flow.dart';
 import '../theme/app_theme.dart';
@@ -90,15 +91,19 @@ class _FaceScannerState extends State<_FaceScanner>
   Map<dynamic, dynamic>? _cameraDiagnostics;
   CameraDescription? _selectedCamera;
   bool _switchingCamera = false;
-  Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
   AccountOpeningStepArgs? _accountOpeningStepArgs;
   bool _autoAdvanceConfigured = false;
+  bool _cameraHasFrame = false;
+  bool _finishing = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    BiometryConfirmationService.instance.confirmation.addListener(
+      _handleRemoteConfirmation,
+    );
     _scanController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2100),
@@ -117,10 +122,11 @@ class _FaceScannerState extends State<_FaceScanner>
     if (arguments is AccountOpeningStepArgs) {
       _accountOpeningStepArgs = arguments;
       _autoAdvanceConfigured = true;
-      _autoAdvanceTimer = Timer(
-        const Duration(milliseconds: 4200),
-        _finishAccountOpeningStep,
-      );
+      return;
+    }
+
+    if (arguments is RemoteBiometryConfirmationArgs) {
+      _autoAdvanceConfigured = true;
       return;
     }
 
@@ -128,14 +134,31 @@ class _FaceScannerState extends State<_FaceScanner>
 
     _journeySession = arguments;
     _autoAdvanceConfigured = true;
-    _autoAdvanceTimer = Timer(
-      const Duration(milliseconds: 4500),
-      _finishProductJourney,
-    );
   }
 
+  void _handleRemoteConfirmation() {
+    final confirmation =
+        BiometryConfirmationService.instance.confirmation.value;
+    if (!_autoAdvanceConfigured ||
+        confirmation != BiometryConfirmationType.face) {
+      return;
+    }
+    BiometryConfirmationService.instance.clear();
+    _confirmFace();
+  }
+
+  void _confirmFace() {
+    if (_accountOpeningStepArgs != null) {
+      _finishAccountOpeningStep();
+    } else {
+      _finishProductJourney();
+    }
+  }
+
+
   void _finishProductJourney() {
-    if (!mounted) return;
+    if (!mounted || _finishing) return;
+    _finishing = true;
     Navigator.of(context).pushNamedAndRemoveUntil(
       JourneyFlow.processingRoute,
       (_) => false,
@@ -144,7 +167,8 @@ class _FaceScannerState extends State<_FaceScanner>
   }
 
   void _finishAccountOpeningStep() {
-    if (!mounted) return;
+    if (!mounted || _finishing) return;
+    _finishing = true;
     final accountStep = _accountOpeningStepArgs;
     if (accountStep == null) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
@@ -173,6 +197,7 @@ class _FaceScannerState extends State<_FaceScanner>
     if (mounted) {
       setState(() {
         _cameraError = null;
+        _cameraHasFrame = false;
         _cameraStatus = 'Procurando câmeras...';
       });
     }
@@ -235,7 +260,6 @@ class _FaceScannerState extends State<_FaceScanner>
             if (mounted) setState(() {});
 
             await controller.initialize().timeout(const Duration(seconds: 12));
-            await Future<void>.delayed(const Duration(milliseconds: 500));
 
             // Não confie apenas em isInitialized: neste aparelho a câmera
             // frontal inicializava, mas não entregava nenhum quadro.
@@ -266,6 +290,7 @@ class _FaceScannerState extends State<_FaceScanner>
             _cameraError = null;
             _cameraStatus =
                 '${_cameraLabel(camera)} ativa • imagem confirmada • ${preset.name}';
+            _cameraHasFrame = true;
             setState(() {});
             return;
           } catch (error) {
@@ -280,7 +305,7 @@ class _FaceScannerState extends State<_FaceScanner>
             try {
               await controller.dispose();
             } catch (_) {}
-            await Future<void>.delayed(const Duration(milliseconds: 450));
+            await Future<void>.delayed(const Duration(milliseconds: 120));
           }
         }
       }
@@ -320,7 +345,6 @@ class _FaceScannerState extends State<_FaceScanner>
       try {
         await controller.stopImageStream();
       } catch (_) {}
-      await Future<void>.delayed(const Duration(milliseconds: 250));
       return result;
     } catch (_) {
       timeout?.cancel();
@@ -431,7 +455,9 @@ class _FaceScannerState extends State<_FaceScanner>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _autoAdvanceTimer?.cancel();
+    BiometryConfirmationService.instance.confirmation.removeListener(
+      _handleRemoteConfirmation,
+    );
     unawaited(CardReaderService.instance.stopFaceLedBlink());
     _scanController.dispose();
     unawaited(_cameraController?.dispose());
@@ -458,7 +484,8 @@ class _FaceScannerState extends State<_FaceScanner>
                   ? (availableHeight * 0.78).clamp(220.0, 315.0).toDouble()
                   : 440.0);
 
-          final portraitSize = scannerSize * 0.88;
+          final portraitWidth = scannerSize * 0.98;
+          final portraitHeight = scannerSize * 0.82;
           final ringSize = scannerSize * 0.98;
           final scanTopStart = scannerSize * 0.18;
           final scanTravel = scannerSize * 0.58;
@@ -487,8 +514,8 @@ class _FaceScannerState extends State<_FaceScanner>
                         ),
                         ClipOval(
                           child: Container(
-                            width: portraitSize,
-                            height: portraitSize,
+                            width: portraitWidth,
+                            height: portraitHeight,
                             decoration: BoxDecoration(
                               color: const Color(0xFFE7EBF1),
                               border: Border.all(
@@ -636,7 +663,25 @@ class _CameraPreviewOrFallback extends StatelessWidget {
               colors: [Color(0xFFF3F5F8), Color(0xFFE7EBF1)],
             ),
           ),
-          child: CustomPaint(painter: _FacePainter()),
+          child: Center(
+            child: error == null
+                ? const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: AppColors.orange),
+                      SizedBox(height: 14),
+                      Text(
+                        'Abrindo câmera...',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  )
+                : const Icon(
+                    Icons.videocam_off_rounded,
+                    size: 64,
+                    color: AppColors.orange,
+                  ),
+          ),
         );
       },
     );

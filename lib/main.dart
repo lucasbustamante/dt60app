@@ -19,6 +19,7 @@ import 'screens/processing_screen.dart';
 import 'screens/product_offer_screen.dart';
 import 'screens/standby_screen.dart';
 import 'screens/success_screen.dart';
+import 'services/biometry_confirmation_service.dart';
 import 'services/card_reader_service.dart';
 import 'services/terminal_command_service.dart';
 import 'theme/app_theme.dart';
@@ -85,6 +86,20 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
   }
 
   void _handleCommand(TerminalCommand command) {
+    if (command == TerminalCommand.confirmFace) {
+      BiometryConfirmationService.instance.confirm(
+        BiometryConfirmationType.face,
+      );
+      return;
+    }
+
+    if (command == TerminalCommand.confirmFingerprint) {
+      BiometryConfirmationService.instance.confirm(
+        BiometryConfirmationType.fingerprint,
+      );
+      return;
+    }
+
     final ledColor = command.ledColor;
     if (ledColor != null) {
       unawaited(CardReaderService.instance.setStatusLed(ledColor));
@@ -135,11 +150,20 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
     }
 
     final route = _routeFor(command);
+    final routeArguments =
+        command == TerminalCommand.biometria ||
+                command == TerminalCommand.biometriaDigital
+            ? const RemoteBiometryConfirmationArgs()
+            : null;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final navigator = _navigatorKey.currentState;
       if (navigator == null) return;
-      navigator.pushNamedAndRemoveUntil(route, (_) => false);
+      navigator.pushNamedAndRemoveUntil(
+        route,
+        (_) => false,
+        arguments: routeArguments,
+      );
     });
   }
 
@@ -183,6 +207,8 @@ class _PinpadTerminalAppState extends State<PinpadTerminalApp> {
       case TerminalCommand.ledWhite:
       case TerminalCommand.ledOff:
       case TerminalCommand.ledLoading:
+      case TerminalCommand.confirmFace:
+      case TerminalCommand.confirmFingerprint:
         return AppRoutes.standby;
     }
   }

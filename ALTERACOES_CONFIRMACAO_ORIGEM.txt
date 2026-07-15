@@ -1,0 +1,17 @@
+AJUSTE DE CONFIRMACAO DE BIOMETRIA
+
+- O PinPad nao exibe mais pop-up local de confirmacao.
+- Biometria facial e digital iniciadas por comando externo aguardam confirmacao externa.
+- Comandos de confirmacao aceitos pelo PinPad:
+  confirm_face
+  confirm_fingerprint
+- O aplicativo testeadb exibe o pop-up no proprio aparelho que enviou a jornada.
+- Na abertura de conta, o pop-up permanece aberto ate confirmar digital e facial separadamente.
+- Comandos avulsos biometria_facial e biometria_digital tambem exibem confirmacao no testeadb.
+
+IMPORTANTE SOBRE O TERMINAL CONTROL:
+A pasta recebida contem somente os executaveis compilados TerminalControlLauncher.exe
+e TerminalControlWebSocketBridge.exe. O codigo-fonte do Terminal Control nao esta no ZIP,
+portanto nao foi possivel inserir visualmente o pop-up dentro desse executavel.
+O PinPad ja aceita os mesmos comandos confirm_face e confirm_fingerprint; para colocar
+o pop-up no Terminal Control original e necessario o projeto/codigo-fonte dele.

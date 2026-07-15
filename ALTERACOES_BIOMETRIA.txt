@@ -1,0 +1,24 @@
+ALTERAÇÕES REALIZADAS
+
+1. Biometria facial
+- Exibe loading enquanto a câmera ainda não entregou o primeiro frame.
+- A imagem só aparece após a câmera estar realmente pronta.
+- Removido o avanço automático por tempo nas jornadas.
+- Confirmação manual local no terminal.
+- Confirmação remota pelo comando confirm_face.
+- Moldura ampliada e oval, preservando a proporção original da câmera.
+- Reduzidos atrasos artificiais durante a inicialização e troca de perfil.
+
+2. Biometria digital
+- Removido o avanço automático por tempo nas jornadas.
+- Confirmação manual local no terminal.
+- Confirmação remota pelo comando confirm_fingerprint.
+- A leitura física original continua disponível nas telas avulsas.
+
+3. Aplicativo testeadb
+- Ao iniciar uma jornada com biometria, abre uma janela de confirmação.
+- O botão correspondente envia a confirmação ao terminal via WebSocket.
+
+Observação
+- Os executáveis existentes em TerminalControl_Portable foram mantidos.
+- Para que os novos comandos funcionem, gere uma nova build do aplicativo principal e do testeadb a partir dos fontes incluídos.

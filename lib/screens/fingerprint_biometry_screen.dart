@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/bank_product.dart';
+import '../services/biometry_confirmation_service.dart';
 import '../services/card_reader_service.dart';
 import '../services/journey_flow.dart';
 import '../theme/app_theme.dart';
@@ -19,7 +20,6 @@ class FingerprintBiometryScreen extends StatefulWidget {
 
 class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   StreamSubscription<CardReaderEvent>? _subscription;
-  Timer? _autoAdvanceTimer;
   ProductJourneySession? _journeySession;
   AccountOpeningStepArgs? _accountOpeningStepArgs;
   bool _configured = false;
@@ -29,6 +29,9 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   @override
   void initState() {
     super.initState();
+    BiometryConfirmationService.instance.confirmation.addListener(
+      _handleRemoteConfirmation,
+    );
     _subscription = CardReaderService.instance.events.listen((event) {
       if (event.type == CardReaderEventType.fingerprintDetected) {
         if (_accountOpeningStepArgs != null) {
@@ -52,19 +55,15 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     if (arguments is AccountOpeningStepArgs) {
       _accountOpeningStepArgs = arguments;
       unawaited(CardReaderService.instance.setStatusLed('blue'));
-      _autoAdvanceTimer = Timer(
-        const Duration(milliseconds: 3600),
-        _finishAccountOpeningStep,
-      );
       return;
     }
 
     if (arguments is ProductJourneySession) {
       _journeySession = arguments;
-      _autoAdvanceTimer = Timer(
-        const Duration(milliseconds: 5000),
-        _finishProductJourney,
-      );
+      return;
+    }
+
+    if (arguments is RemoteBiometryConfirmationArgs) {
       return;
     }
 
@@ -74,13 +73,35 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
 
   @override
   void dispose() {
-    _autoAdvanceTimer?.cancel();
     if (_fingerprintDetectionStarted) {
       unawaited(CardReaderService.instance.stopFingerprintDetection());
     }
+    BiometryConfirmationService.instance.confirmation.removeListener(
+      _handleRemoteConfirmation,
+    );
     unawaited(_subscription?.cancel());
     super.dispose();
   }
+
+
+  void _handleRemoteConfirmation() {
+    final confirmation =
+        BiometryConfirmationService.instance.confirmation.value;
+    if (confirmation != BiometryConfirmationType.fingerprint) return;
+    BiometryConfirmationService.instance.clear();
+    _confirmFingerprint();
+  }
+
+  void _confirmFingerprint() {
+    if (_accountOpeningStepArgs != null) {
+      _finishAccountOpeningStep();
+    } else if (_journeySession == null) {
+      _goToPassword();
+    } else {
+      _finishProductJourney();
+    }
+  }
+
 
   void _goToPassword() {
     if (!mounted || _goingToPassword) return;
@@ -94,7 +115,6 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
   void _finishProductJourney() {
     if (!mounted || _goingToPassword) return;
     _goingToPassword = true;
-    _autoAdvanceTimer?.cancel();
     Navigator.of(context).pushNamedAndRemoveUntil(
       JourneyFlow.processingRoute,
       (_) => false,
@@ -107,7 +127,6 @@ class _FingerprintBiometryScreenState extends State<FingerprintBiometryScreen> {
     final accountStep = _accountOpeningStepArgs;
     if (accountStep == null) return;
     _goingToPassword = true;
-    _autoAdvanceTimer?.cancel();
     Navigator.of(context).pushNamedAndRemoveUntil(
       accountStep.nextRoute,
       (_) => false,
